@@ -96,7 +96,7 @@ internal static class EntitySoundPosTrackingController
 
     public static void Register(ILoadedSound sound, EntitySoundPosTrackingMetadata metadata)
     {
-        if (sound == null || metadata == null || !SurroundSoundLabConfigManager.Current.EnableEntitySoundPosTracking)
+        if (sound == null || metadata == null || !SurroundSoundLabConfigManager.Current.EffectiveEnableEntitySoundPosTracking)
         {
             return;
         }
@@ -126,7 +126,7 @@ internal static class EntitySoundPosTrackingController
 
     private static void OnGameTick(float deltaTime)
     {
-        if (!SurroundSoundLabConfigManager.Current.EnableEntitySoundPosTracking)
+        if (!SurroundSoundLabConfigManager.Current.EffectiveEnableEntitySoundPosTracking)
         {
             return;
         }
@@ -496,8 +496,7 @@ internal static class EntitySoundPosTrackingPlayback
 
     public static bool TryPlayInferredCoordinateSound(ClientMain game, AssetLocation location, double x, double y, double z, EnumSoundType soundType, float pitch, float range, float volume)
     {
-        if (!SurroundSoundLabConfigManager.Current.EnableEntitySoundPosTracking
-            || !SurroundSoundLabConfigManager.Current.EnableEntitySoundPosTrackingInference
+        if (!SurroundSoundLabConfigManager.Current.EffectiveEnableEntitySoundPosTrackingInference
             || !IsInferenceEligible(location, soundType))
         {
             return false;
@@ -515,8 +514,7 @@ internal static class EntitySoundPosTrackingPlayback
 
     public static void TryAttachInferredMetadata(ClientMain game, SoundParams soundParams)
     {
-        if (!SurroundSoundLabConfigManager.Current.EnableEntitySoundPosTracking
-            || !SurroundSoundLabConfigManager.Current.EnableEntitySoundPosTrackingInference
+        if (!SurroundSoundLabConfigManager.Current.EffectiveEnableEntitySoundPosTrackingInference
             || soundParams?.Position == null
             || soundParams.RelativePosition
             || !IsInferenceEligible(soundParams.Location, soundParams.SoundType))
@@ -583,7 +581,7 @@ internal static class EntitySoundPosTrackingPlayback
 
     private static bool ShouldUseDefinitePosTracking(Entity entity)
     {
-        return SurroundSoundLabConfigManager.Current.EnableEntitySoundPosTracking && entity?.Pos != null;
+        return SurroundSoundLabConfigManager.Current.EffectiveEnableEntitySoundPosTracking && entity?.Pos != null;
     }
 
     private static Vec3f ResolveEntityAnchorOffset(Entity entity)

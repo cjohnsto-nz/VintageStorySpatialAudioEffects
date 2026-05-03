@@ -31,23 +31,26 @@ public class SurroundSoundLabModSystem : ModSystem
         harmony = new Harmony("vintagestorysurroundsound.audioopenal");
         harmony.PatchAll();
         SoundOcclusion.Initialize(api);
-        EntitySoundPosTrackingController.Initialize(api);
+        if (SurroundSoundLabConfigManager.Current.EffectiveEnableEntitySoundPosTracking)
+        {
+            EntitySoundPosTrackingController.Initialize(api);
+        }
         CustomSoundRegistry.Register(api, Mod.Logger);
         if (SurroundSoundLabConfigManager.Current.ReplaceVanillaWeatherBeds)
         {
             WeatherBedOverrides.Apply(api, Mod.Logger);
         }
         RecreateGameAudioContext(api);
-        if (SurroundSoundLabConfigManager.Current.EnableExperimentalLeafRustleEmitters)
+        if (SurroundSoundLabConfigManager.Current.EffectiveEnableExperimentalLeafRustleEmitters)
         {
             leafRustleEmitterSystem = new LeafRustleEmitterSystem(api);
             leafRustleDebugRenderer = new LeafRustleDebugRenderer(api, leafRustleEmitterSystem);
             api.Event.RegisterRenderer(leafRustleDebugRenderer, EnumRenderStage.Opaque, "vintagestorysurroundsound-leafdebug");
         }
-        if (SurroundSoundLabConfigManager.Current.EnableExperimentalRainEmitters)
+        if (SurroundSoundLabConfigManager.Current.EffectiveEnableExperimentalRainEmitters)
         {
             rainEmitterSystem = new RainEmitterSystem(api);
-            if (SurroundSoundLabConfigManager.Current.EnableDebugTools && SurroundSoundLabConfigManager.Current.ShowRainEmitterDebugVisuals)
+            if (SurroundSoundLabConfigManager.Current.EnableDebugTools && SurroundSoundLabConfigManager.Current.EffectiveShowRainEmitterDebugVisuals)
             {
                 rainEmitterDebugRenderer = new RainEmitterDebugRenderer(api, rainEmitterSystem);
                 api.Event.RegisterRenderer(rainEmitterDebugRenderer, EnumRenderStage.Opaque, "vintagestorysurroundsound-raindebug");
@@ -55,10 +58,13 @@ public class SurroundSoundLabModSystem : ModSystem
         }
         if (SurroundSoundLabConfigManager.Current.EnableDebugTools)
         {
-            entitySoundOcclusionDebugRenderer = new EntitySoundOcclusionDebugRenderer(api);
-            api.Event.RegisterRenderer(entitySoundOcclusionDebugRenderer, EnumRenderStage.Opaque, "vintagestorysurroundsound-entityocclusiondebug");
-            entitySoundPosTrackingDebugRenderer = new EntitySoundPosTrackingDebugRenderer(api);
-            api.Event.RegisterRenderer(entitySoundPosTrackingDebugRenderer, EnumRenderStage.Opaque, "vintagestorysurroundsound-entitytrackingdebug");
+            if (!SurroundSoundLabConfigManager.Current.LiteMode)
+            {
+                entitySoundOcclusionDebugRenderer = new EntitySoundOcclusionDebugRenderer(api);
+                api.Event.RegisterRenderer(entitySoundOcclusionDebugRenderer, EnumRenderStage.Opaque, "vintagestorysurroundsound-entityocclusiondebug");
+                entitySoundPosTrackingDebugRenderer = new EntitySoundPosTrackingDebugRenderer(api);
+                api.Event.RegisterRenderer(entitySoundPosTrackingDebugRenderer, EnumRenderStage.Opaque, "vintagestorysurroundsound-entitytrackingdebug");
+            }
             testService = new ChannelTestService(api);
             debugDialog = new SurroundDebugDialog(api, testService, leafRustleEmitterSystem, rainEmitterSystem);
             api.Gui.RegisterDialog(debugDialog);

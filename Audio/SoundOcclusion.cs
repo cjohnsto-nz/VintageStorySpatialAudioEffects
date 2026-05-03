@@ -25,7 +25,7 @@ internal static class SoundOcclusion
         Dispose();
         capi = api;
         Clear();
-        if (!SurroundSoundLabConfigManager.Current.EnableStaticSoundBlockOcclusion)
+        if (!SurroundSoundLabConfigManager.Current.EffectiveEnableStaticSoundBlockOcclusion)
         {
             return;
         }
@@ -74,7 +74,7 @@ internal static class SoundOcclusion
 
     public static void ApplyInitialOcclusion(ILoadedSound sound)
     {
-        if (!SurroundSoundLabConfigManager.Current.EnableStaticSoundBlockOcclusion)
+        if (!SurroundSoundLabConfigManager.Current.EffectiveEnableStaticSoundBlockOcclusion)
         {
             return;
         }
@@ -107,7 +107,7 @@ internal static class SoundOcclusion
     private static bool ApplyOcclusion(ILoadedSound sound, Vec3f soundPosition, float baseVolume, bool force)
     {
         SurroundSoundLabConfig config = SurroundSoundLabConfigManager.Current;
-        if (!config.EnableEntitySoundBlockOcclusion || sound == null || soundPosition == null)
+        if (!config.EffectiveEnableEntitySoundBlockOcclusion || sound == null || soundPosition == null)
         {
             return false;
         }
@@ -420,7 +420,7 @@ internal static class SoundOcclusion
 
     private static void RecordDebugRay(Vec3f from, Vec3f to, int occludingBlocks, int maxBlocks, float volumeFactor, float lowPassFactor)
     {
-        if (!SurroundSoundLabConfigManager.Current.ShowEntitySoundOcclusionDebugRays)
+        if (!SurroundSoundLabConfigManager.Current.EffectiveShowEntitySoundOcclusionDebugRays)
         {
             return;
         }

@@ -18,6 +18,7 @@ public enum SurroundOutputMode
 
 public sealed class SurroundSoundLabConfig
 {
+    public bool LiteMode { get; set; } = false;
     public bool EnableDebugTools { get; set; } = false;
     public SurroundOutputMode OutputMode { get; set; } = SurroundOutputMode.Auto;
     public float ListenerBackwardOffset { get; set; } = 0.5f;
@@ -69,6 +70,17 @@ public sealed class SurroundSoundLabConfig
     public bool ShowLeafRustleDebugVisuals { get; set; } = false;
     public bool ShowRainEmitterDebugVisuals { get; set; } = false;
     public bool EnableSoundAudit { get; set; } = false;
+
+    public bool EffectiveEnableExperimentalLeafRustleEmitters => !LiteMode && EnableExperimentalLeafRustleEmitters;
+    public bool EffectiveEnableExperimentalRainEmitters => !LiteMode && EnableExperimentalRainEmitters;
+    public bool EffectiveEnableEntitySoundPosTracking => !LiteMode && EnableEntitySoundPosTracking;
+    public bool EffectiveEnableEntitySoundPosTrackingInference => !LiteMode && EnableEntitySoundPosTracking && EnableEntitySoundPosTrackingInference;
+    public bool EffectiveEnableEntitySoundBlockOcclusion => !LiteMode && EnableEntitySoundBlockOcclusion;
+    public bool EffectiveEnableStaticSoundBlockOcclusion => !LiteMode && EnableStaticSoundBlockOcclusion;
+    public bool EffectiveShowEntitySoundOcclusionDebugRays => !LiteMode && ShowEntitySoundOcclusionDebugRays;
+    public bool EffectiveShowEntitySoundPosTrackingDebugVisuals => !LiteMode && ShowEntitySoundPosTrackingDebugVisuals;
+    public bool EffectiveShowLeafRustleDebugVisuals => !LiteMode && ShowLeafRustleDebugVisuals;
+    public bool EffectiveShowRainEmitterDebugVisuals => !LiteMode && ShowRainEmitterDebugVisuals;
 }
 
 internal static class SurroundSoundLabConfigManager
