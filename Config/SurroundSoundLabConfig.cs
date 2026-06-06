@@ -43,6 +43,7 @@ public sealed class SurroundSoundLabConfig
         "helvehammer",
         "hammer"
     ];
+    public string StaticSoundBlockOcclusionSoundWhitelistText { get; set; } = "water, anvil, quern, pulverizer, helvehammer, hammer";
     public int EntitySoundBlockOcclusionMaxBlocks { get; set; } = 8;
     public int EntitySoundBlockOcclusionRefreshMs { get; set; } = 500;
     public float EntitySoundBlockOcclusionMinDistance { get; set; } = 2f;
@@ -110,18 +111,22 @@ internal static class SurroundSoundLabConfigManager
 
     private static void Normalize(SurroundSoundLabConfig config)
     {
+        List<string> fallback =
+        [
+            "water",
+            "anvil",
+            "quern",
+            "pulverizer",
+            "helvehammer",
+            "hammer"
+        ];
+
+        List<string> parsedWhitelist = ParseWhitelistText(config.StaticSoundBlockOcclusionSoundWhitelistText);
         config.StaticSoundBlockOcclusionSoundWhitelist = DeduplicateList(
-            config.StaticSoundBlockOcclusionSoundWhitelist,
-            new List<string>
-            {
-                "water",
-                "anvil",
-                "quern",
-                "pulverizer",
-                "helvehammer",
-                "hammer"
-            }
+            parsedWhitelist.Count > 0 ? parsedWhitelist : config.StaticSoundBlockOcclusionSoundWhitelist,
+            fallback
         );
+        config.StaticSoundBlockOcclusionSoundWhitelistText = string.Join(", ", config.StaticSoundBlockOcclusionSoundWhitelist);
     }
 
     private static List<string> DeduplicateList(List<string> values, List<string> fallback)
@@ -142,5 +147,16 @@ internal static class SurroundSoundLabConfigManager
         }
 
         return deduplicated;
+    }
+
+    private static List<string> ParseWhitelistText(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return [];
+        }
+
+        string[] split = value.Split([',', '\n', '\r', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return new List<string>(split);
     }
 }

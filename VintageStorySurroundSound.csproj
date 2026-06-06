@@ -35,6 +35,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="assets\vintagestorysurroundsound\config\configlib-patches.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\vintagestorysurroundsound\config\configlib-patches.json</PackagePath>
+    </Content>
     <Content Include="Audio\Assets\rain-surround-loud.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>

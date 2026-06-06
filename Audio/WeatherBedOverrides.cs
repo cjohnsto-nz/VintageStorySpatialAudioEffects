@@ -1,11 +1,16 @@
+using System.Collections.Generic;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.Client;
+using Vintagestory.Client.NoObf;
 
 namespace SurroundSoundLab;
 
 internal static class WeatherBedOverrides
 {
+    private static readonly Dictionary<AssetLocation, AudioData> OriginalAudioDataByTarget = new();
+    private static bool applied;
+
     private static readonly (AssetLocation Target, AssetLocation Replacement)[] Replacements =
     {
         (new AssetLocation("game:sounds/weather/tracks/rain-leafless.ogg"), new AssetLocation("vintagestorysurroundsound:sounds/weather/tracks/rain-surround-new.ogg")),
@@ -19,14 +24,52 @@ internal static class WeatherBedOverrides
 
     public static void Apply(ICoreClientAPI api, ILogger logger)
     {
+        if (applied)
+        {
+            return;
+        }
+
         foreach (var (target, replacement) in Replacements)
         {
             TryRegister(api, logger, target, replacement);
         }
+
+        applied = true;
+    }
+
+    public static void Restore(ILogger logger)
+    {
+        if (!applied)
+        {
+            return;
+        }
+
+        foreach (var (target, _) in Replacements)
+        {
+            if (OriginalAudioDataByTarget.TryGetValue(target, out AudioData original))
+            {
+                ScreenManager.soundAudioData[target] = original;
+            }
+            else
+            {
+                ScreenManager.soundAudioData.Remove(target);
+            }
+        }
+
+        applied = false;
+        logger.Notification("Restored vanilla weather audio beds.");
     }
 
     private static void TryRegister(ICoreClientAPI api, ILogger logger, AssetLocation targetLocation, AssetLocation replacementLocation)
     {
+        if (!OriginalAudioDataByTarget.ContainsKey(targetLocation))
+        {
+            if (ScreenManager.soundAudioData.TryGetValue(targetLocation, out AudioData existing))
+            {
+                OriginalAudioDataByTarget[targetLocation] = existing;
+            }
+        }
+
         IAsset asset = api.Assets.TryGet(replacementLocation);
         if (asset?.Data == null)
         {
