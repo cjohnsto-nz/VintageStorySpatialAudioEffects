@@ -15,8 +15,8 @@ The silent device check takes five seconds. It checks stream activation, not the
 format displayed by your receiver. Inspect that display separately.
 
 Launch the game using your ordinary shortcut. With a custom data directory, keep
---dataPath "your data folder" in that shortcut. Pitch tilt is optional and defaults
-off. Stereo/surround weather beds keep their authored horizontal speaker channels.
+--dataPath "your data folder" in that shortcut. Pitch tilt is enabled by default and can be switched
+off. Existing explicit settings are preserved. Stereo/surround weather beds keep their authored horizontal speaker channels.
 The add-on does not require an everyday special launcher.
 
 Protected game directories may require running Install.cmd as administrator.

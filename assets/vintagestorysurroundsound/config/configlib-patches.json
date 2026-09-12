@@ -57,7 +57,7 @@
     {
       "code": "FollowCameraPitch",
       "type": "boolean",
-      "default": false,
+      "default": true,
       "clientSide": true,
       "ingui": "Follow camera pitch",
       "comment": "Tilt positional audio with the player view when looking up or down. Off keeps the original yaw-only listener."

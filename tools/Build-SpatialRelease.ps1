@@ -3,7 +3,8 @@
 param(
     [string]$GamePath = (Join-Path $env:APPDATA 'Vintagestory'),
     [string]$Destination,
-    [string]$NativeBuildRoot
+    [string]$NativeBuildRoot,
+    [switch]$Prerelease
 )
 $ErrorActionPreference = 'Stop'
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -11,7 +12,9 @@ $GamePath = (Resolve-Path -LiteralPath $GamePath).Path
 $gameVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $GamePath 'Vintagestory.exe')).FileVersion
 if ($gameVersion -ne '1.22.7') { throw 'This spatial candidate is currently qualified for building against Vintage Story 1.22.7 only.' }
 $metadata = Get-Content -LiteralPath (Join-Path $root 'modinfo.json') -Raw | ConvertFrom-Json
-$candidate = $metadata.version + '-dev-' + (Get-Date -Format 'yyyyMMdd-HHmmss')
+$candidate = if ($Prerelease) { $metadata.version } else { $metadata.version + '-dev-' + (Get-Date -Format 'yyyyMMdd-HHmmss') }
+if ($Prerelease -and $metadata.version -notmatch '^\d+\.\d+\.\d+-[0-9A-Za-z.-]+$') { throw 'A prerelease build requires a prerelease version in modinfo.json.' }
+if ($Prerelease -and (git -C $root status --porcelain)) { throw 'Commit changes before building a publishable prerelease.' }
 if (-not $Destination) { $Destination = Join-Path $root ('bin\releases\' + $candidate) }
 $Destination = [IO.Path]::GetFullPath($Destination)
 if (Test-Path -LiteralPath $Destination) { throw 'Choose a new output directory; existing artifacts will not be overwritten.' }
@@ -86,7 +89,7 @@ $runtimeManifest | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $sourceB
 $files = @(Get-ChildItem -LiteralPath $addon -Recurse -File | ForEach-Object {
     [ordered]@{ Path = [IO.Path]::GetRelativePath($addon, $_.FullName).Replace('\','/'); Sha256 = (Get-FileHash -LiteralPath $_.FullName).Hash }
 })
-$manifest = [ordered]@{ Schema = 1; Candidate = $candidate; DevelopmentBuild = $true; Commit = $commit; DirtyWorktree = $dirty;
+$manifest = [ordered]@{ Schema = 1; Candidate = $candidate; DevelopmentBuild = (-not $Prerelease); Prerelease = [bool]$Prerelease; Commit = $commit; DirtyWorktree = $dirty;
     ModVersion = $metadata.version; RuntimeVersion = $runtime.Version; GameVersions = @($gameVersion);
     ModPath = ('payload/' + $modName); NativePath = 'payload/OpenAL32.dll'; SourceArchive = $sourceName;
     SourceSha256 = (Get-FileHash -LiteralPath (Join-Path $Destination $sourceName)).Hash; Runtime = $runtimeManifest; Files = $files }
@@ -104,5 +107,5 @@ foreach ($name in $artifacts) {
 }
 $hashes = @($artifacts | ForEach-Object { (Get-FileHash -LiteralPath (Join-Path $Destination $_)).Hash.ToLowerInvariant() + '  ' + $_ })
 [IO.File]::WriteAllLines((Join-Path $Destination 'SHA256SUMS.txt'), $hashes)
-Write-Host "Development candidate packaged: $Destination"
+Write-Host "Candidate packaged: $Destination"
 [pscustomobject]@{ Directory = $Destination; Addon = (Join-Path $Destination $addonName); Source = (Join-Path $Destination $sourceName); Mod = $modZip; StagedAddon = $addon }

@@ -9,8 +9,8 @@ Status: implementation and prebuilt development packaging are available. The Win
 - Treat Vintage Story updates as compatibility boundaries. Qualify named game versions for each release. **Automatic repair, automatic DLL replacement after game updates, and compatibility across untested game versions are out of scope.** A changed or unsupported installation gets a clear explanation and manual setup instructions.
 - Initially qualify Windows x64 and Vintage Story 1.22.7, the installed version used for development. The 2.0.0 mod now declares that minimum game version, and the add-on accepts exactly 1.22.7. Expand declared support only after testing other versions. No 1.21, Linux or macOS spatial support is planned for this release.
 - Describe the feature as experimental Windows Spatial Audio with 7.1.4 height output. The implementation supplies a static channel bed to Windows; it is not encoded-file passthrough, a Dolby encoder bundled with the mod, or one dynamic Atmos object per game source. Verify Atmos on the receiver separately.
-- Keep `OutputMode=Auto` and `FollowCameraPitch=false` as normal defaults. The spatial installer explicitly selects spatial output; pitch remains an optional setting. The maintainer's current local test deliberately enables pitch.
-- The maintainer selected **2.0.0** for the combined spatial/installer and Bell-occlusion update. Mod metadata and assembly versions are updated together. Candidate archives remain marked development builds until release review and hardware checks are complete.
+- Keep `OutputMode=Auto` as the normal output default. From 2.0.0-dev.1, `FollowCameraPitch=true` is the default for new/missing settings; an explicit saved false remains respected. The spatial installer explicitly selects spatial output.
+- The maintainer selected **2.0.0** for the combined spatial/installer and Bell-occlusion update. Mod metadata and assembly versions are updated together. The maintainer has authorized **2.0.0-dev.1** as a GitHub prerelease for external testing. The package builder supports exact prerelease names from a clean commit; stable promotion still requires the remaining review and hardware checks.
 - Version the native dependency separately: initially OpenAL Soft `1.25.2+surround-spatial1`, with source, patch, build recipe and resulting binary hashes. Mod-only changes should not require reinstalling an unchanged native runtime.
 
 ## What is already implemented
@@ -31,7 +31,7 @@ Owner: maintainer / implementation PR.
 - [ ] Review the feature together with this plan. The branch starts at `50fab2c` on `feature/sound-pos-tracking`; four existing commits after `origin/main` provide the 1.2.3 config, assets and weather-override baseline. The PR against `main` includes that dependency explicitly.
 - [ ] Resolve review findings without mixing in unrelated projects or runtime binaries.
 - [ ] Confirm the first candidate's exact mod version and game compatibility list. Update `modinfo.json`, any meaningful assembly version, filenames and release notes consistently. Read versions from metadata in packaging scripts rather than hard-coding 1.2.3.
-- [ ] Preserve enum values and old configurations. Verify missing pitch configuration resolves to false.
+- [ ] Preserve enum values and old configurations. Verify missing pitch configuration resolves to true and explicit false remains respected.
 - [ ] Record the candidate commit and the exact game SDK, architecture and runtime revision used to build it.
 
 Exit: a fixed candidate commit, reviewed feature scope and exact version metadata. The initial PR stays draft while public setup and hardware acceptance remain incomplete.

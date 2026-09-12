@@ -10,7 +10,7 @@ public sealed class SurroundSoundLabConfig
     public bool EnableDebugTools { get; set; } = false;
     public SurroundOutputMode OutputMode { get; set; } = SurroundOutputMode.Auto;
     public float ListenerBackwardOffset { get; set; } = 0.5f;
-    public bool FollowCameraPitch { get; set; } = false;
+    public bool FollowCameraPitch { get; set; } = true;
     public bool UpmixStereoToSurround { get; set; } = true;
     public float StereoUpmixGainDb { get; set; } = -6f;
     public bool ReplaceVanillaWeatherBeds { get; set; } = true;

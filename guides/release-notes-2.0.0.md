@@ -1,9 +1,9 @@
-# Surround Sound 2.0.0 candidate
+# Surround Sound 2.0.0-dev.1 prerelease
 
-This candidate adds optional Windows Spatial Audio with 7.1.4 height output and
+This prerelease adds optional Windows Spatial Audio with 7.1.4 height output and
 fixes the Bell alarm cutting out when entity sound occlusion is enabled ([#5](https://github.com/cjohnsto-nz/VintageStorySurroundSound/issues/5)).
-It targets Vintage Story 1.22.7. These are prepared release notes; no release has
-been published.
+It targets Vintage Story 1.22.7. Spatial audio is experimental; remaining testing
+and known limitations are listed below.
 
 ## Audio changes
 
@@ -11,8 +11,9 @@ been published.
   Positional sounds can reach height speakers through Windows' spatial renderer.
   This supplies a mixed channel bed, not encoded Atmos passthrough or individual
   dynamic Atmos objects for every game sound.
-- Optional **Follow camera pitch** setting, disabled by default. Looking up/down
-  changes the direction of positional audio relative to your view.
+- Optional **Follow camera pitch** setting, enabled by default. Looking up/down
+  changes the direction of positional audio relative to your view. Existing
+  explicit off settings are preserved.
 - Weather beds keep their original stereo/surround speaker channels. They bypass
   stereo expansion and do not rotate into height speakers with camera pitch.
   Ground rain and other positioned emitters retain positional playback.
