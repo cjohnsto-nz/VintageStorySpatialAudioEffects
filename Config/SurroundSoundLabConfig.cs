@@ -4,24 +4,13 @@ using Vintagestory.API.Common;
 
 namespace SurroundSoundLab;
 
-public enum SurroundOutputMode
-{
-    Auto,
-    StereoBasic,
-    Stereo,
-    StereoHrtf,
-    Quad,
-    Surround5Point1,
-    Surround6Point1,
-    Surround7Point1
-}
-
 public sealed class SurroundSoundLabConfig
 {
     public bool LiteMode { get; set; } = false;
     public bool EnableDebugTools { get; set; } = false;
     public SurroundOutputMode OutputMode { get; set; } = SurroundOutputMode.Auto;
     public float ListenerBackwardOffset { get; set; } = 0.5f;
+    public bool FollowCameraPitch { get; set; } = false;
     public bool UpmixStereoToSurround { get; set; } = true;
     public float StereoUpmixGainDb { get; set; } = -6f;
     public bool ReplaceVanillaWeatherBeds { get; set; } = true;

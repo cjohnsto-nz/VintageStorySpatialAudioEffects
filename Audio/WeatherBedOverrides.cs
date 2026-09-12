@@ -19,7 +19,7 @@ internal static class WeatherBedOverrides
         (new AssetLocation("game:sounds/weather/wind-leafy.ogg"), new AssetLocation("vintagestorysurroundsound:sounds/weather/wind-surround-leafless2.ogg")),
         (new AssetLocation("game:sounds/weather/lowgrumble.ogg"), new AssetLocation("vintagestorysurroundsound:sounds/weather/rumble-low.ogg")),
         (new AssetLocation("game:sounds/weather/lightning-distant.ogg"), new AssetLocation("vintagestorysurroundsound:sounds/weather/lightning-distant.ogg")),
-        (new AssetLocation("game:sounds/weather/hail.ogg"), new AssetLocation("vintagestorysurroundsound:sounds/weather/hail.wav"))
+        (new AssetLocation("game:sounds/weather/tracks/hail.ogg"), new AssetLocation("vintagestorysurroundsound:sounds/weather/hail.wav"))
     };
 
     public static void Apply(ICoreClientAPI api, ILogger logger)

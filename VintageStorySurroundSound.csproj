@@ -12,6 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="tests\**\*.cs;tools\**\*.cs" />
     <Reference Include="VintagestoryAPI.dll">
       <HintPath>$(GamePath)\VintagestoryAPI.dll</HintPath>
       <Private>false</Private>

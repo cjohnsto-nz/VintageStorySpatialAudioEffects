@@ -382,6 +382,9 @@ internal static class NonMonoChannelMaskController
 
         targetChannels = SurroundSoundLabConfigManager.Current.OutputMode switch
         {
+            // Keep the existing upmix in the horizontal 7.1 bed. Mono world
+            // sources supply height; copying music overhead invents no position.
+            SurroundOutputMode.WindowsSpatialAudio when AudioOpenAlInitContextPatch.SpatialBedRequested => 8,
             SurroundOutputMode.Quad => 4,
             SurroundOutputMode.Surround5Point1 => 6,
             SurroundOutputMode.Surround6Point1 => 7,
@@ -523,6 +526,7 @@ internal static class LoadedSoundNativeChannelMaskPatch
     public static void Postfix(LoadedSoundNative __instance, MaskedPcmState __state)
     {
         NonMonoChannelMaskController.ApplyPostCreateSourceProcessing(__instance, __state);
+        WeatherBedSpatialController.OnSourceCreated(__instance);
     }
 
     public static Exception Finalizer(Exception __exception, MaskedPcmState __state)

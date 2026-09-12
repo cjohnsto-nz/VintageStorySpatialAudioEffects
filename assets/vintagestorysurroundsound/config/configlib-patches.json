@@ -41,7 +41,7 @@
       "default": "Auto",
       "clientSide": true,
       "ingui": "Output mode",
-      "comment": "Preferred speaker layout for the recreated OpenAL context.",
+      "comment": "Preferred output mode. WindowsSpatialAudio requires the prepared spatial launcher and a full restart; enable Dolby Atmos for home theater on the Windows HDMI endpoint.",
       "mapping": {
         "Auto": 0,
         "StereoBasic": 1,
@@ -50,8 +50,17 @@
         "Quad": 4,
         "Surround5Point1": 5,
         "Surround6Point1": 6,
-        "Surround7Point1": 7
+        "Surround7Point1": 7,
+        "WindowsSpatialAudio": 8
       }
+    },
+    {
+      "code": "FollowCameraPitch",
+      "type": "boolean",
+      "default": false,
+      "clientSide": true,
+      "ingui": "Follow camera pitch",
+      "comment": "Tilt positional audio with the player view when looking up or down. Off keeps the original yaw-only listener."
     },
     {
       "code": "ListenerBackwardOffset",
