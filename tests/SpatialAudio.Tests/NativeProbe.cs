@@ -8,7 +8,7 @@ internal static class NativeProbe
 {
     internal static int Run(string[] args)
     {
-        if (args.Length != 4 || args[0] is not ("--render" or "--spatial-probe"))
+        if (args.Length != 4 || args[0] is not ("--render" or "--spatial-probe" or "--auto-start-probe"))
             throw new ArgumentException("--render|--spatial-probe <OpenAL DLL> <output directory> <Front|Above|WeatherFlat|WeatherRain|WeatherWind>");
         string directory = Path.GetFullPath(args[2]);
         Directory.CreateDirectory(directory);
@@ -16,15 +16,44 @@ internal static class NativeProbe
         string log = Path.Combine(directory, "openal.log");
         string wave = Path.Combine(directory, "render.wav");
         bool render = args[0] == "--render";
+        bool autoStart = args[0] == "--auto-start-probe";
         string backend = render ? $"[wave]\nfile = {wave}\nbformat = false\n" : "[wasapi]\nspatial-api = true\n";
-        File.WriteAllText(config, "[general]\ndrivers = " + (render ? "wave" : "wasapi")
-            + "\nchannels = surround714\nfrequency = 48000\nsample-type = float32\nstereo-encoding = basic\n" + backend);
-        Environment.SetEnvironmentVariable("ALSOFT_CONF", config);
-        Environment.SetEnvironmentVariable("ALSOFT_LOGFILE", log);
-        Environment.SetEnvironmentVariable("ALSOFT_LOGLEVEL", "3");
-        Environment.SetEnvironmentVariable("ALSOFT_DRIVERS", render ? "wave" : "wasapi");
+        if (!autoStart)
+        {
+            File.WriteAllText(config, "[general]\ndrivers = " + (render ? "wave" : "wasapi")
+                + "\nchannels = surround714\nfrequency = 48000\nsample-type = float32\nstereo-encoding = basic\n" + backend);
+            Environment.SetEnvironmentVariable("ALSOFT_CONF", config);
+            Environment.SetEnvironmentVariable("ALSOFT_LOGFILE", log);
+            Environment.SetEnvironmentVariable("ALSOFT_LOGLEVEL", "3");
+            Environment.SetEnvironmentVariable("ALSOFT_DRIVERS", render ? "wave" : "wasapi");
+        }
+        else
+        {
+            foreach (string name in Environment.GetEnvironmentVariables().Keys)
+                if (name.StartsWith("ALSOFT_", StringComparison.OrdinalIgnoreCase) || name == "SURROUNDSOUND_SPATIAL_STARTUP")
+                    throw new Exception("Auto-start probe requires an environment without audio overrides: " + name);
+            if (!SpatialStartupConfiguration.Current.Configured)
+                throw new Exception("Game-local startup configuration was not present before this process started.");
+        }
         nint library = NativeLibrary.Load(Path.GetFullPath(args[1]));
         NativeLibrary.SetDllImportResolver(typeof(NativeProbe).Assembly, (name, _, _) => name == "OpenAL32" ? library : 0);
+        var capturedLog = new StringBuilder();
+        LogCallback callback = null;
+        SetLogCallback setCallback = null;
+        if (autoStart)
+        {
+            // Register before the first OpenAL initialization. This captures
+            // evidence without setting any logging/config environment variable.
+            nint setter = alcGetProcAddress(0, "alsoft_set_log_callback");
+            if (setter == 0) throw new Exception("Native diagnostic callback unavailable.");
+            setCallback = Marshal.GetDelegateForFunctionPointer<SetLogCallback>(setter);
+            callback = (_, _, message, length) =>
+            {
+                try { lock (capturedLog) capturedLog.AppendLine(Marshal.PtrToStringUTF8(message, length)); }
+                catch { /* Never throw through native callback code. */ }
+            };
+            setCallback(callback, 0);
+        }
         nint device = 0, context = 0;
         uint source = 0, buffer = 0;
         string version = null;
@@ -96,7 +125,10 @@ internal static class NativeProbe
             alcMakeContextCurrent(0);
             if (context != 0) alcDestroyContext(context);
             if (device != 0) alcCloseDevice(device);
+            setCallback?.Invoke(null, 0);
+            GC.KeepAlive(callback);
         }
+        if (autoStart) File.WriteAllText(log, capturedLog.ToString());
         string evidence = "";
         if (File.Exists(log))
         {
@@ -107,7 +139,9 @@ internal static class NativeProbe
         bool streamActivated = SpatialNativeLog.ConfirmsHeightStream(evidence);
         object result = render
             ? new { Version = version, OutputMode = mode, Position = args[3], ListenerOrientation = listenerOrientation, Wave = ReadWave(wave), Log = log }
-            : new { Version = version, Device = deviceName, OutputMode = mode, Log = log, StreamActivated = streamActivated, ConnectedAfterFiveSeconds = connected != 0, ReceiverVerified = false };
+            : new { Version = version, Device = deviceName, OutputMode = mode, Log = log, StreamActivated = streamActivated,
+                ConnectedAfterFiveSeconds = connected != 0, NormalLaunchConfiguration = autoStart,
+                ConfigPath = autoStart ? SpatialStartupConfiguration.Current.Path : config, ReceiverVerified = false };
         string json = JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(Path.Combine(directory, "result.json"), json);
         Console.WriteLine(json);
@@ -151,6 +185,9 @@ internal static class NativeProbe
     }
 
     [DllImport("OpenAL32", CallingConvention = CallingConvention.Cdecl)] private static extern nint alcOpenDevice(string name);
+    [DllImport("OpenAL32", CallingConvention = CallingConvention.Cdecl)] private static extern nint alcGetProcAddress(nint device, string name);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] private delegate void LogCallback(nint user, byte level, nint message, int length);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] private delegate void SetLogCallback(LogCallback callback, nint user);
     [DllImport("OpenAL32", CallingConvention = CallingConvention.Cdecl)] private static extern nint alcCreateContext(nint device, int[] attributes);
     [DllImport("OpenAL32", CallingConvention = CallingConvention.Cdecl)] [return: MarshalAs(UnmanagedType.I1)] private static extern bool alcMakeContextCurrent(nint context);
     [DllImport("OpenAL32", CallingConvention = CallingConvention.Cdecl)] private static extern void alcDestroyContext(nint context);

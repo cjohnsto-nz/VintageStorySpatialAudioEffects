@@ -41,7 +41,7 @@
       "default": "Auto",
       "clientSide": true,
       "ingui": "Output mode",
-      "comment": "Preferred output mode. WindowsSpatialAudio requires the prepared spatial launcher and a full restart; enable Dolby Atmos for home theater on the Windows HDMI endpoint.",
+      "comment": "Preferred output mode. WindowsSpatialAudio requires the spatial runtime and game-local startup configuration, then a full restart. Enable Dolby Atmos for home theater on the Windows HDMI endpoint.",
       "mapping": {
         "Auto": 0,
         "StereoBasic": 1,

@@ -20,15 +20,15 @@ internal static class SpatialAudioPolicy
         if (!requested)
             return ("NotRequested", "Windows Spatial Audio mode is not selected.");
         if (!runtimeSupported)
-            return ("SetupRequired", "OpenAL Soft 1.24+ is required. Launch the prepared spatial sandbox.");
+            return ("SetupRequired", "Install the compatible spatial OpenAL runtime, then restart the game.");
         if (!startupConfigured)
-            return ("RestartRequired", "Launch through Start-SpatialAudio.ps1 so configuration is applied before audio starts.");
+            return ("RestartRequired", "Install the game-local spatial configuration and fully restart, or use the diagnostic launcher.");
         if (initializationFailure != null)
             return ("Fallback", initializationFailure);
         if (actualMode is "Stereo" or "Stereo Basic" or "Stereo HRTF" or "Mono" or "Quad" or "5.1" or "6.1" or "7.1")
             return ("HeightUnavailable", $"OpenAL reports {actualMode}; the requested 7.1.4 layout was not established.");
         if (streamActivated)
             return ("StreamActive", "7.1.4 Windows stream started at initialization. Verify Atmos input and overhead playback on the receiver.");
-        return ("Unverified", "7.1.4 requested. Check the OpenAL log and receiver; Atmos activation is not exposed by OpenAL.");
+        return ("Unverified", "Spatial startup settings detected. Verify height playback and receiver format; no native activation log is available for this context.");
     }
 }

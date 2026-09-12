@@ -108,5 +108,12 @@ foreach (float pitch in new[] { MathF.PI / 2, MathF.PI * 0.75f, MathF.PI, MathF.
         && MathF.Abs(Vector3.Dot(basis.Forward, basis.Up)) < 0.0001f,
         "Listener basis remains orthonormal, including vertical view: " + pitch);
 }
+string localSpatialIni = "[general]\ndrivers = wasapi\nchannels = surround714\n[wasapi]\nspatial-api = true\n";
+Check(SpatialStartupConfiguration.HasSpatialSettings(localSpatialIni), "Normal-launch configuration enables spatial startup without a launcher marker");
+Check(!SpatialStartupConfiguration.HasSpatialSettings(localSpatialIni + "[wasapi]\nspatial-api = false\n"),
+    "A later conventional override defeats earlier spatial settings");
+Check(!SpatialStartupConfiguration.HasSpatialSettings(localSpatialIni.Replace("surround714", "surround71")), "Horizontal configuration is not a height request");
+Check(!SpatialStartupConfiguration.HasSpatialSettings(localSpatialIni.Replace("drivers = wasapi", "drivers = wave")), "Wave renderer configuration is not a Windows spatial request");
+Check(!SpatialStartupConfiguration.HasSpatialSettings(null), "Missing startup configuration is not treated as configured");
 Console.WriteLine($"{count} checks passed.");
 return 0;

@@ -12,5 +12,6 @@
     <Compile Include="../../Audio/SpatialNativeLog.cs" Link="SpatialNativeLog.cs" />
     <Compile Include="../../Audio/WeatherBedSpatialPolicy.cs" Link="WeatherBedSpatialPolicy.cs" />
     <Compile Include="../../Audio/ListenerOrientationPolicy.cs" Link="ListenerOrientationPolicy.cs" />
+    <Compile Include="../../Audio/SpatialStartupConfiguration.cs" Link="SpatialStartupConfiguration.cs" />
   </ItemGroup>
 </Project>

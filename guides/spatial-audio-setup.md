@@ -32,9 +32,19 @@ This requires more than a normal mod ZIP: the installer replaces `Lib/OpenAL32.d
 
 It builds and installs the mod, preserves the other mod settings while selecting spatial output and enabling debug tools, and backs up the previous mod ZIP, native DLL and mod configuration under `VintagestoryData/SurroundSpatialTest/<timestamp>`. Other mods and worlds are retained. The ZIP keeps the current 1.2.3 metadata for local feature testing.
 
-Use the desktop **Vintage Story - Spatial Audio Test** shortcut. It runs the normal installed game with the normal data directory; its process receives the necessary spatial startup settings and a timestamped native log. The **Vintage Story - Standard Audio** shortcut selects automatic conventional output for comparison, using the same patched runtime. The ordinary shortcut does not supply these explicit spatial startup settings.
+**Use your ordinary Vintage Story shortcut or executable.** Setup installs `alsoft.ini` beside the game executable; OpenAL automatically reads it before initializing audio, regardless of the working directory. No machine-wide environment variables or special launch arguments are required. The mod recognizes the game-local configuration and retains the selected spatial mode.
 
-To restore the original mod, runtime and settings, close the game and run `pwsh -File '<backup folder>/Restore-LocalSpatialAudio.ps1'`. Restoration saves the latest mod configuration before reverting it and refuses to overwrite a mod or DLL that changed after installation. Use the ordinary game shortcut after restoration. Game updates can replace the native DLL; this is an experimental local setup, not a self-contained mod release.
+For an existing local test installation, enable this without rebuilding/replacing the runtime:
+
+```powershell
+.\tools\Enable-StandardSpatialLaunch.ps1 -InstallationPath '<VintagestoryData>/SurroundSpatialTest/<timestamp>'
+```
+
+Close the game first. This adds the config to the existing restore manifest, preserving any original `alsoft.ini` and retaining the original mod/runtime backups. Repeating this setup does not replace the original config backup. The mod update on this branch is needed to recognize startup without the legacy launcher marker.
+
+The desktop **Vintage Story - Spatial Audio Test** shortcut remains optional for diagnostics: it supplies a timestamped native log. The **Vintage Story - Standard Audio** shortcut selects conventional output for comparison, using the same patched runtime. Normal launches lack that native trace, so the spatial panel can show **Unverified** even when playback works: startup configuration was detected, but native activation and receiver format have not been verified for that context. Reports identify the configuration source/path. Explicit `ALSOFT_CONF` overrides take precedence, and settings edited after the process started require a full restart.
+
+To restore the original mod, runtime and settings, close the game and run `pwsh -File '<backup folder>/Restore-LocalSpatialAudio.ps1'`. Restoration saves the latest mod configuration before reverting it and refuses to overwrite a tracked payload changed after installation. It also restores the original game-local OpenAL config, or removes the one setup created. Use the ordinary game shortcut after restoration. This is an experimental local setup, not a self-contained mod release.
 
 The sandbox experienced a stream disconnect after successful initialization. A later standalone five-second receiver probe stayed connected; local gameplay and audible height output still need confirmation.
 
@@ -67,14 +77,17 @@ The existing F9 summary panel also exposes a Spatial Audio button. Full paths an
 ```powershell
 .\tools\Test-SpatialAudio.ps1
 .\tools\Test-SpatialAudio.ps1 -ProbeDevice
+.\tools\Test-StandardSpatialLaunch.ps1
 ```
 
 The first command checks context attributes, fallback reporting, source coordinates and signal bounds, then renders front/overhead sources through the actual patched native library to twelve-channel WAV files. It asserts strong overhead-channel localization. The second additionally attempts a silent spatial stream on the default Windows endpoint.
 
 Results and native logs are under `bin/spatial-tests/patched`. Hardware tests remain necessary for receiver Atmos indication, perceived direction, latency, dropout handling and actual gameplay.
 
+`Test-StandardSpatialLaunch.ps1` launches a separate probe executable with the config beside it, a different working directory, and no OpenAL environment overrides. It verifies config discovery, native spatial activation and connection after five seconds using a native log callback registered before initialization. It does not launch the game or alter Windows audio settings; evidence is under `bin/spatial-tests/normal-launch-*`.
+
 ## Why a patched native library is required
 
 The game's bundled OpenAL Soft 1.23.0 predates the Windows spatial backend. During implementation, the upstream 1.25.2 spatial path also reproduced a native ownership bug on this machine. The feature therefore builds a pinned 1.25.2 source revision with a small allocation/cleanup correction and an activation diagnostic. See [native/README.md](../native/README.md) for the root cause, source patch and rebuild details.
 
-Installing only the mod DLL/ZIP is insufficient for this prototype. The experimental launcher is the supported setup path on this branch. No mod release, native binary publication or upstream bug submission is included.
+Installing only the mod DLL/ZIP is insufficient for this prototype. The installed runtime plus game-local configuration support normal game launch; the experimental launcher remains useful for native diagnostics. No mod release, native binary publication or upstream bug submission is included.

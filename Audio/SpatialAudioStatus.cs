@@ -14,6 +14,7 @@ internal sealed class SpatialAudioStatus
     public string NativeLibraryPath { get; init; }
     public string NativeLibraryVersion { get; init; }
     public string ConfigPath { get; init; }
+    public string ConfigurationSource { get; init; }
     public string LogPath { get; init; }
     public string State { get; init; }
     public string Detail { get; init; }
@@ -23,7 +24,8 @@ internal sealed class SpatialAudioStatus
     public static SpatialAudioStatus Capture(string runtimeVersion, bool hasContext, string actualMode)
     {
         bool requested = SurroundSoundLabConfigManager.Current.OutputMode == SurroundOutputMode.WindowsSpatialAudio;
-        bool startup = Environment.GetEnvironmentVariable("SURROUNDSOUND_SPATIAL_STARTUP") == "1";
+        var configuration = SpatialStartupConfiguration.Current;
+        bool startup = configuration.Configured;
         bool supported = SpatialAudioPolicy.SupportsSpatialBackend(runtimeVersion);
         var result = SpatialAudioPolicy.Evaluate(requested, startup, supported, hasContext, actualMode,
             AudioOpenAlInitContextPatch.LastInitializationFailure, AudioOpenAlInitContextPatch.HeightStreamStartedAtInitialization);
@@ -47,7 +49,7 @@ internal sealed class SpatialAudioStatus
         {
             Requested = requested, StartupConfigured = startup, RuntimeSupported = supported,
             NativeLibraryPath = nativePath, NativeLibraryVersion = nativeVersion,
-            ConfigPath = Environment.GetEnvironmentVariable("ALSOFT_CONF"),
+            ConfigPath = configuration.Path, ConfigurationSource = configuration.Source,
             LogPath = Environment.GetEnvironmentVariable("ALSOFT_LOGFILE"),
             State = result.State, Detail = result.Detail,
             HeightStreamStartedAtInitialization = AudioOpenAlInitContextPatch.HeightStreamStartedAtInitialization

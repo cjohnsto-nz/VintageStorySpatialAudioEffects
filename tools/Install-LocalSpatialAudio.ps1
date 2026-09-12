@@ -90,5 +90,6 @@ foreach ($mode in @('Spatial Audio Test', 'Standard Audio')) {
     $shortcut.Save()
 }
 Write-Host "Installed and verified: $modTarget"
+& (Join-Path $PSScriptRoot 'Enable-StandardSpatialLaunch.ps1') -InstallationPath $session
 Write-Host "Backups and launcher: $session"
-Write-Host 'Desktop shortcuts: Vintage Story - Spatial Audio Test / Vintage Story - Standard Audio'
+Write-Host 'Normal game launch supports spatial audio. Optional diagnostic shortcuts: Vintage Story - Spatial Audio Test / Vintage Story - Standard Audio'

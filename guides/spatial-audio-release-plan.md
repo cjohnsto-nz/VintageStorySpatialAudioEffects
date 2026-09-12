@@ -60,13 +60,14 @@ Exit: downloadable candidate artifacts that install without a source tree or bui
 
 Owner: packaging implementation and installer tester.
 
-The intended user flow is: install the normal mod, run spatial setup once, select the HDMI receiver and Dolby Atmos for home theater in Windows, then use the spatial launcher. Setup must also support a user who has not installed the mod yet, using the matching packaged candidate ZIP.
+The intended user flow is: install the normal mod, run spatial setup once, select the HDMI receiver and Dolby Atmos for home theater in Windows, then launch the game normally. A game-local `alsoft.ini` supplies startup settings; a special shortcut is only needed for optional native diagnostic logging. Setup must also support a user who has not installed the mod yet, using the matching packaged candidate ZIP.
 
 - [ ] Locate or allow selection of the game and data directories. Verify Windows x64, the declared game version, writable destination and a closed game. Do not terminate the user's game.
 - [ ] Show which game DLL, mod and configuration will change before applying setup. Preserve other mods, saves and settings.
 - [ ] Capture the original DLL, original matching mod archive and relevant configuration once, before replacement. Keep that original restore point through repeat setup and mod-only updates. The current timestamped developer installer needs improvement here: rerunning it can otherwise make a newer backup refer to an already patched runtime.
 - [ ] Install only verified payloads. Track completed writes and roll back this installation attempt if copying or configuration fails. Test interrupted/partial setup as well as success.
-- [ ] Create a launcher that configures only its game process, including the chosen data path, native logging and startup marker. Do not alter machine-wide OpenAL settings.
+- [x] Implement normal launch through EXE-local `alsoft.ini`, recognize it in the mod, preserve its original restore point, and probe the startup mechanism without audio environment overrides. Public packaging remains open.
+- [ ] Package an optional diagnostic launcher that configures only its game process, including the chosen data path and native logging. Do not alter machine-wide OpenAL settings or require this launcher for everyday use.
 - [ ] Provide a conventional-audio launch option and a clearly separate full restore option. Conventional launch continues using the patched DLL; full restore returns the original DLL and settings.
 - [ ] Recognize an already installed identical runtime and leave it in place during a mod-only update. Reject conflicting duplicate mod installations with an actionable explanation.
 - [ ] Restore the exact selected installation without deleting unrelated files. Retain the latest user config before reverting it. If a file changed since setup, explain the conflict rather than overwriting it blindly.

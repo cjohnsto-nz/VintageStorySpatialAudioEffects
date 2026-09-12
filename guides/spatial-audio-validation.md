@@ -43,6 +43,14 @@ Stock OpenAL Soft 1.25.2 reproduced Windows exception `0xc0000374` during spatia
 - Native renders verified front-source height energy changing from 28.3% with pitch off to 72.0% while looking down 45 degrees with pitch on; native orientation readback matched each setting. The mono weather bed produced 96.4% height-channel energy. Existing multichannel weather comparisons still passed. These remain renderer measurements, not room measurements.
 - Installed the updated ZIP and enabled pitch in normal game data. Prior prototype/settings were backed up under `SurroundSpatialTest/20260912-185059/updates/20260912-192216`; the original pre-spatial restore backup remains intact. Native runtime unchanged. In-game listening and patch activation remain to be checked by the user.
 
+## Normal-launch follow-up
+
+- Added game-local `alsoft.ini` startup and mod detection using the process executable's directory. Configuration is snapshotted, must predate the process, and respects an explicit `ALSOFT_CONF` override. A legacy launcher marker is no longer required.
+- Release build passed with zero warnings/errors; 71 managed checks passed. A standalone native probe with no OpenAL environment overrides and a different working directory discovered its EXE-local config, activated 7.1.4 on the NVIDIA HDMI receiver and remained connected after five seconds. Evidence: `bin/spatial-tests/normal-launch-20260912-201452-854`.
+- Setup round-trip verification preserved a pre-existing config byte-for-byte, retained one original backup through repeat setup, and restored the original hash. PowerShell syntax and diff checks passed.
+- Installed the updated mod and `Vintagestory/alsoft.ini` into the normal installation. All four tracked file hashes matched. The existing pre-spatial restore point now also removes the added INI (or would restore an original file if one existed); the native DLL was unchanged. Prior mod/settings saved under `SurroundSpatialTest/20260912-185059/updates/20260912-201550`.
+- The ordinary game shortcut is ready for manual testing. No full-game launch has yet been verified for this revision. Normal launches do not have the optional launcher's native trace, so detected configuration may be reported as Unverified rather than asserting stream activation or receiver format.
+
 ## Remaining hardware/game checks
 
 Receiver Atmos format indication and perceived overhead direction, in-world debug panel layout and playback, ordinary gameplay effects, world reload, device disconnect/reconnect, latency and sustained-load dropouts still require validation. No other Vintage Story version has been qualified by this run. The mod's existing version metadata is retained because this is feature-branch work, not a published release.
