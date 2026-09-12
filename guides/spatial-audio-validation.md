@@ -28,14 +28,14 @@ Stock OpenAL Soft 1.25.2 reproduced Windows exception `0xc0000374` during spatia
 - `bin/SpatialSandbox/AudioLogs/` (launcher preflight and game native logs)
 - `bin/SpatialSandbox/Data/Logs/client-main.log` (game startup)
 
-## Weather-bed follow-up
+## Weather-bed follow-up (superseded elevation experiment)
 
 - The user reported that the installed spatial test works. Receiver input-format indication was not separately recorded.
 - Added rain-bed elevation of approximately 45 degrees and wind-bed elevation of approximately 30 degrees, restricted to the named background loops in spatial mode. Ground rain emitters and other effects are excluded.
 - 47 managed checks pass, including asset selection and emitter exclusions. Native six-channel bed renders into 7.1.4 show height-channel energy fractions of 27.9% for the baseline, 56.6% for wind and 71.9% for rain, with signal in all four height outputs. These are software measurements with synthetic independent channel signals; listening with the weather assets remains necessary.
 - Inspected the installed 1.22.7 engine: `SystemSoundEngine.OnRenderFrame` passes `viewVector.X, 0f, viewVector.Z` to the audio listener, so camera pitch is intentionally absent from current listener orientation. This change preserves that behavior.
 
-## Pitch and remaining weather beds follow-up
+## Pitch and remaining weather beds follow-up (weather elevation superseded)
 
 - Added opt-in `FollowCameraPitch`, with an orthonormal listener forward/up basis applied after the engine's flattened listener update. Default remains false; enabled explicitly in the local test configuration. Reports now include the setting and actual OpenAL orientation.
 - Included hail, storm tremble/rumble, distant-thunder and additional replacement rain beds. Mono ambient beds also receive broad overhead rendering. Explicit world-positioned effects and ground rain emitters remain excluded. Fixed the hail override target to the engine's actual `sounds/weather/tracks/hail.ogg` path.
@@ -50,6 +50,14 @@ Stock OpenAL Soft 1.25.2 reproduced Windows exception `0xc0000374` during spatia
 - Setup round-trip verification preserved a pre-existing config byte-for-byte, retained one original backup through repeat setup, and restored the original hash. PowerShell syntax and diff checks passed.
 - Installed the updated mod and `Vintagestory/alsoft.ini` into the normal installation. All four tracked file hashes matched. The existing pre-spatial restore point now also removes the added INI (or would restore an original file if one existed); the native DLL was unchanged. Prior mod/settings saved under `SurroundSpatialTest/20260912-185059/updates/20260912-201550`.
 - The ordinary game shortcut is ready for manual testing. No full-game launch has yet been verified for this revision. Normal launches do not have the optional launcher's native trace, so detected configuration may be reported as Unverified rather than asserting stream activation or receiver format.
+
+## Weather speaker routing correction
+
+- The maintainer reported audible phasing with the elevated, pitch-sensitive weather beds. Earlier height-energy measurements verified routing but did not establish acceptable sound quality.
+- Inspected the actual Ogg identification headers: replacement rain/wind/rumble/distant-thunder recordings have six channels, while vanilla low/very-low tremble recordings have two. Removed forced elevation and listener-following source positioning. Ambient weather beds now bypass stereo expansion, and multichannel/stereo beds use nonspatial direct-channel output with unmatched-channel remix fallback. Positional emitters and the pitch setting remain available.
+- Release build against 1.22.7 passed with zero warnings/errors; 71 managed checks passed. Native stereo and 5.1 renders retained their two/six input channels, produced zero height energy, and preserved channel balance with the listener tilted down 45 degrees. Stereo reached only FL/FR; 5.1 reached FL/FR/FC/LFE/SL/SR. Positional tests still measured 97.1% overhead energy and a front-source change from 28.3% to 72.0% with pitch enabled.
+- Installed the corrected 20-entry mod ZIP into the normal game after confirming it was closed. Archive layout and installed SHA-256 verified; original restore backups retained, previous prototype saved under `SurroundSpatialTest/20260912-185059/updates/20260912-203217`. Runtime, startup INI and user configuration were unchanged. The game is ready for manual listening through the normal shortcut.
+- Evidence: `bin/spatial-tests/patched/WeatherStereo`, `WeatherStereoTilt`, `WeatherSurround`, `WeatherSurroundTilt`. These synthetic renders verify routing; actual weather listening remains necessary to assess the reported phasing.
 
 ## Remaining hardware/game checks
 

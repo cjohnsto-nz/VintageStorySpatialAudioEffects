@@ -7,8 +7,6 @@ namespace SurroundSoundLab;
 [HarmonyPatch(typeof(AudioOpenAl), "UpdateListener")]
 internal static class AudioOpenAlUpdateListenerPatch
 {
-    public static void Postfix(Vector3 position) => WeatherBedSpatialController.OnListenerUpdated(position);
-
     public static void Prefix(ref Vector3 position, Vector3 orientation)
     {
         float backwardOffset = SurroundSoundLabConfigManager.Current.ListenerBackwardOffset;

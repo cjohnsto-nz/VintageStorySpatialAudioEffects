@@ -18,11 +18,11 @@ Status: proposed release process; the feature and local developer setup are impl
 - [x] Height-preserving OpenAL context selection, runtime/setup diagnostics and conventional output modes.
 - [x] Native spatial-activation ownership fix and pinned source build.
 - [x] World-positioned spatial test panel and opt-in pitch tilt with an orthonormal listener basis.
-- [x] Elevated rain, wind, hail, storm tremble/rumble and distant-thunder beds; ground emitters retain world positioning.
+- [x] Rain, wind, hail, storm tremble/rumble and distant-thunder beds preserve authored speaker channels, bypass stereo upmix and remain independent of camera pitch; ground emitters retain world positioning.
 - [x] Local setup, dedicated launcher, backup and restore scripts used successfully on the maintainer's normal installation.
-- [x] 66 managed checks, native 12-channel rendering tests, short receiver activation/connection probes and local installation verification.
+- [x] 71 managed checks, native 12-channel rendering tests, short receiver activation/connection probes and local installation verification.
 
-See [validation record](spatial-audio-validation.md) for evidence and limits. User-reported initial playback success is not a substitute for the remaining hardware tests. The latest pitch/weather revision still needs listening confirmation.
+See [validation record](spatial-audio-validation.md) for evidence and limits. User-reported initial playback success is not a substitute for the remaining hardware tests. The weather routing correction still needs listening confirmation after the elevated prototype produced audible phasing.
 
 ## Stage 1 — prepare a reviewable candidate
 
@@ -93,7 +93,7 @@ dotnet build .\VintageStorySurroundSound.csproj -c Release -p:GamePath=<selected
 - [ ] Add a per-height-channel routing diagnostic distinct from world-positioned sound tests. Existing directional tests intentionally distribute energy across speakers and cannot prove channel isolation.
 - [ ] Verify ordinary stereo, 5.1/7.1 and headphone HRTF behavior, plus unsupported-runtime behavior, with the new features disabled.
 - [ ] Listen to front/rear/above/corner/sweep sources while stationary and while moving. Verify pitch on/off, including near-vertical views, and capture actual listener orientation from reports.
-- [ ] Test all elevated weather beds, volume transitions and sheltered/interior conditions. Verify positional rain/foliage emitters, nearby lightning, music, UI, occlusion and reverberation remain appropriate. Bass/LFE is not an isolated directional height test.
+- [ ] Test all weather beds for stable horizontal routing without phasing while looking up/down, including volume transitions and sheltered/interior conditions. Verify positional rain/foliage emitters, nearby lightning, music, UI, occlusion and reverberation remain appropriate. Bass/LFE is not an isolated directional height test.
 - [ ] Record Windows endpoint, spatial provider, HDMI route, receiver/soundbar model, physical speaker layout, reported input format and listening result. Start with the maintainer's NVIDIA HDMI receiver; obtain at least one independent compatible system before calling the add-on broadly usable.
 - [ ] Complete at least a one-hour gameplay session, several world unload/reload cycles, pause/resume and device disconnect/reconnect. Document behavior for device loss even if recovery requires restarting the game.
 - [ ] Investigate the recorded spatial-stream timeout/reset failure. Stable release requires either a fix or a reproduced, understood limitation with a reliable documented recovery. A five-second probe alone does not close this issue.

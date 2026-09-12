@@ -9,7 +9,7 @@ internal static class NativeProbe
     internal static int Run(string[] args)
     {
         if (args.Length != 4 || args[0] is not ("--render" or "--spatial-probe" or "--auto-start-probe"))
-            throw new ArgumentException("--render|--spatial-probe <OpenAL DLL> <output directory> <Front|Above|WeatherFlat|WeatherRain|WeatherWind>");
+            throw new ArgumentException("--render|--spatial-probe|--auto-start-probe <OpenAL DLL> <output directory> <Front|Above|PitchOff|PitchOn|WeatherStereo|WeatherStereoTilt|WeatherSurround|WeatherSurroundTilt>");
         string directory = Path.GetFullPath(args[2]);
         Directory.CreateDirectory(directory);
         string config = Path.Combine(directory, "alsoft.ini");
@@ -61,6 +61,7 @@ internal static class NativeProbe
         int mode = 0;
         int connected = 1;
         float[] listenerOrientation = null;
+        int inputChannels = 0;
         try
         {
             device = alcOpenDevice(null);
@@ -74,11 +75,11 @@ internal static class NativeProbe
             if (render)
             {
                 bool weather = args[3].StartsWith("Weather", StringComparison.Ordinal);
-                bool monoWeather = args[3] == "WeatherMono";
+                bool stereoWeather = args[3].StartsWith("WeatherStereo", StringComparison.Ordinal);
                 bool pitchTest = args[3].StartsWith("Pitch", StringComparison.Ordinal);
-                Vector3 position = weather ? new Vector3(0, args[3] == "WeatherFlat" ? 0 : WeatherBedSpatialPolicy.Height, 0)
+                Vector3 position = weather ? Vector3.Zero
                     : SpatialTestSignal.WorldPosition(pitchTest ? SpatialTestPosition.Front : Enum.Parse<SpatialTestPosition>(args[3]), Vector3.Zero, -Vector3.UnitZ);
-                if (pitchTest)
+                if (pitchTest || args[3].EndsWith("Tilt", StringComparison.Ordinal))
                 {
                     var basis = ListenerOrientationPolicy.Build(args[3] != "PitchOff", MathF.PI * 1.25f, MathF.PI);
                     alListenerfv(0x100F, new[] { basis.Forward.X, basis.Forward.Y, basis.Forward.Z, basis.Up.X, basis.Up.Y, basis.Up.Z });
@@ -88,24 +89,23 @@ internal static class NativeProbe
                 alGenSources(1, out source);
                 alGenBuffers(1, out buffer);
                 short[] samples = SpatialTestSignal.BuildSamples();
-                if (weather && !monoWeather)
+                if (weather)
                 {
-                    short[] bed = new short[samples.Length * 6];
-                    var random = new Random(7214);
+                    int channels = stereoWeather ? 2 : 6;
+                    short[] bed = new short[samples.Length * channels];
                     for (int frame = 0; frame < samples.Length; frame++)
-                        foreach (int channel in new[] { 0, 1, 4, 5 })
-                            bed[frame * 6 + channel] = (short)(samples[frame] * (random.NextDouble() * 2 - 1));
+                        for (int channel = 0; channel < channels; channel++)
+                            bed[frame * channels + channel] = (short)(samples[frame] * (channel + 1) / 6);
                     samples = bed;
                 }
-                alBufferData(buffer, weather && !monoWeather ? 0x120B : 0x1101, samples, samples.Length * 2, 48000); // 5.1 / mono int16
+                alBufferData(buffer, weather ? (stereoWeather ? 0x1103 : 0x120B) : 0x1101, samples, samples.Length * 2, 48000);
+                alGetBufferi(buffer, 0x2003, out inputChannels); // AL_CHANNELS
                 alSourcei(source, 0x1009, (int)buffer);
                 alSourcef(source, 0x1021, 0); // no distance attenuation
-                if (weather && args[3] != "WeatherFlat")
+                if (weather)
                 {
-                    alSourcei(source, 0x1033, 0); // direct channels disabled
-                    alSourcei(source, 0x1214, 1); // force multichannel spatialization
-                    alSourcef(source, 0x1031, monoWeather ? WeatherBedSpatialPolicy.Height * 0.5f
-                        : WeatherBedSpatialPolicy.Radius(args[3] == "WeatherRain" ? 45 : 30));
+                    alSourcei(source, 0x1214, 0); // speaker bed, no positional spatialization
+                    alSourcei(source, 0x1033, 2); // direct channels, remix only unmatched channels
                 }
                 alSource3f(source, 0x1004, position.X, position.Y, position.Z);
                 alSourcePlay(source);
@@ -138,7 +138,7 @@ internal static class NativeProbe
         }
         bool streamActivated = SpatialNativeLog.ConfirmsHeightStream(evidence);
         object result = render
-            ? new { Version = version, OutputMode = mode, Position = args[3], ListenerOrientation = listenerOrientation, Wave = ReadWave(wave), Log = log }
+            ? new { Version = version, OutputMode = mode, Position = args[3], InputChannels = inputChannels, ListenerOrientation = listenerOrientation, Wave = ReadWave(wave), Log = log }
             : new { Version = version, Device = deviceName, OutputMode = mode, Log = log, StreamActivated = streamActivated,
                 ConnectedAfterFiveSeconds = connected != 0, NormalLaunchConfiguration = autoStart,
                 ConfigPath = autoStart ? SpatialStartupConfiguration.Current.Path : config, ReceiverVerified = false };
@@ -201,6 +201,7 @@ internal static class NativeProbe
     [DllImport("OpenAL32", CallingConvention = CallingConvention.Cdecl)] private static extern void alGenSources(int n, out uint source);
     [DllImport("OpenAL32", CallingConvention = CallingConvention.Cdecl)] private static extern void alGenBuffers(int n, out uint buffer);
     [DllImport("OpenAL32", CallingConvention = CallingConvention.Cdecl)] private static extern void alBufferData(uint buffer, int format, short[] data, int bytes, int rate);
+    [DllImport("OpenAL32", CallingConvention = CallingConvention.Cdecl)] private static extern void alGetBufferi(uint buffer, int param, out int value);
     [DllImport("OpenAL32", CallingConvention = CallingConvention.Cdecl)] private static extern void alSourcei(uint source, int param, int value);
     [DllImport("OpenAL32", CallingConvention = CallingConvention.Cdecl)] private static extern void alSourcef(uint source, int param, float value);
     [DllImport("OpenAL32", CallingConvention = CallingConvention.Cdecl)] private static extern void alSource3f(uint source, int param, float x, float y, float z);

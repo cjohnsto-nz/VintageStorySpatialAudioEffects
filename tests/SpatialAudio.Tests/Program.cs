@@ -73,25 +73,24 @@ Check(samples.Length == 384000 && samples.Max(x => Math.Abs((int)x)) <= 3933,
     "Test signal has bounded level and eight-second duration");
 Check(samples[0] == 0 && samples.Skip(24000).Take(24000).All(x => x == 0), "Burst edges and silent half-second are preserved");
 Check(samples.Take(24000).Any(x => x != 0), "Test signal is audible rather than all silence");
-Check(WeatherBedSpatialPolicy.Elevation("game", "sounds/weather/tracks/rain-leafless.ogg") == 45f
-    && WeatherBedSpatialPolicy.Elevation("game", "sounds/weather/wind-leafy.ogg") == 30f,
-    "Rain and wind beds have separate elevated targets");
+Check(WeatherBedRoutingPolicy.IsAmbientBed("game", "sounds/weather/tracks/rain-leafless.ogg", true, 0, 0, 0)
+    && WeatherBedRoutingPolicy.IsAmbientBed("game", "sounds/weather/wind-leafy.ogg", false, 0, 0, 0),
+    "Relative and unpositioned rain/wind recordings use speaker-bed routing");
+Check(!WeatherBedRoutingPolicy.IsAmbientBed("game", "sounds/weather/lightning-distant.ogg", false, 10, 5, 20),
+    "Explicit world-positioned use of a bed asset keeps positional routing");
 foreach (string path in new[] { "sounds/weather/rain-mono-1.ogg", "sounds/weather/rain-mono-4.ogg",
     "sounds/weather/lightning-near.ogg", "sounds/weather/lightning-verynear.ogg", "sounds/weather/hail.ogg", "sounds/foliage/leaves-mono-1.ogg" })
-    Check(WeatherBedSpatialPolicy.Elevation("game", path) == 0f
-        && WeatherBedSpatialPolicy.Elevation("vintagestorysurroundsound", path) == 0f,
-        "Weather elevation excludes emitters and unrelated effects: " + path);
-Check(WeatherBedSpatialPolicy.Elevation("anothermod", "sounds/weather/wind-leafy.ogg") == 0f,
-    "Weather elevation does not capture other mods' identically named assets");
-Check(Math.Abs(WeatherBedSpatialPolicy.Radius(45f) - 10f) < 0.001f
-    && WeatherBedSpatialPolicy.Radius(30f) > WeatherBedSpatialPolicy.Radius(45f),
-    "Weather spread retains surrounding channels instead of collapsing overhead");
+    Check(!WeatherBedRoutingPolicy.IsBed("game", path)
+        && !WeatherBedRoutingPolicy.IsBed("vintagestorysurroundsound", path),
+        "Bed routing excludes emitters and unrelated effects: " + path);
+Check(!WeatherBedRoutingPolicy.IsBed("anothermod", "sounds/weather/wind-leafy.ogg"),
+    "Bed routing does not capture other mods' identically named assets");
 foreach (string path in new[] { "sounds/weather/tracks/hail.ogg", "sounds/weather/tracks/verylowtremble.ogg",
     "sounds/weather/tracks/lowtremble.ogg", "sounds/weather/lowgrumble.ogg", "sounds/weather/lightning-distant.ogg" })
-    Check(WeatherBedSpatialPolicy.Elevation("game", path) > 0, "Additional weather bed elevated: " + path);
+    Check(WeatherBedRoutingPolicy.IsBed("game", path), "Weather bed retains authored channels: " + path);
 foreach (string path in new[] { "sounds/weather/hail.wav", "sounds/weather/rumble-low.ogg", "sounds/weather/lightning-distant.ogg",
     "sounds/weather/tracks/rain-surround-canopy.ogg", "sounds/weather/tracks/rain-surround-loud.ogg" })
-    Check(WeatherBedSpatialPolicy.Elevation("vintagestorysurroundsound", path) > 0, "Replacement weather bed elevated: " + path);
+    Check(WeatherBedRoutingPolicy.IsBed("vintagestorysurroundsound", path), "Replacement bed retains authored channels: " + path);
 var levelBasis = ListenerOrientationPolicy.Build(true, MathF.PI, MathF.PI);
 var downBasis = ListenerOrientationPolicy.Build(true, MathF.PI * 1.25f, MathF.PI);
 var disabledBasis = ListenerOrientationPolicy.Build(false, MathF.PI * 1.25f, MathF.PI);

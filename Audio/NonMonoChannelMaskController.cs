@@ -90,6 +90,7 @@ internal static class NonMonoChannelMaskController
             int workingChannels = originalChannels;
 
             if (SurroundSoundLabConfigManager.Current.UpmixStereoToSurround
+                && !WeatherBedRoutingController.IsAmbientBed(instance)
                 && TryResolveStereoExpansionTargetChannels(out int targetChannels)
                 && originalChannels == 2
                 && targetChannels > originalChannels)
@@ -526,7 +527,7 @@ internal static class LoadedSoundNativeChannelMaskPatch
     public static void Postfix(LoadedSoundNative __instance, MaskedPcmState __state)
     {
         NonMonoChannelMaskController.ApplyPostCreateSourceProcessing(__instance, __state);
-        WeatherBedSpatialController.OnSourceCreated(__instance);
+        WeatherBedRoutingController.OnSourceCreated(__instance);
     }
 
     public static Exception Finalizer(Exception __exception, MaskedPcmState __state)
