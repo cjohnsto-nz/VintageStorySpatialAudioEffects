@@ -1,8 +1,18 @@
 # Experimental spatial audio setup
 
-Maintainers: see the [release plan and acceptance gates](spatial-audio-release-plan.md). The scripts below currently support developer/local testing; a prebuilt public add-on is still planned.
+Maintainers: see the [release plan and acceptance gates](spatial-audio-release-plan.md). A prebuilt development add-on can now be generated; it has not been published or qualified as a stable release.
 
 This feature branch adds a 7.1.4 Windows Spatial Audio output path for an Atmos receiver or soundbar with height speakers. It preserves positional mono sounds and existing OpenAL effects. It sends a mixed channel bed, not one dynamic Atmos object per game sound.
+
+## Prebuilt add-on candidate
+
+Maintainers can run `tools/Build-SpatialRelease.ps1` to create a normal mod ZIP, Windows x64 add-on ZIP, matching modified OpenAL source ZIP and checksums under a new `bin/releases` directory. Building requires the developer tools below; using the extracted add-on requires only Windows PowerShell 5.1, which ships with Windows. The combined candidate uses mod version 2.0.0.
+
+Extract the entire add-on and run **Install.cmd** with the game closed. Choose the game/data directories, review the paths and confirm. Setup verifies the packaged files and game version, checks the default spatial endpoint, installs the matching mod and native runtime, and configures normal launch. The game-local `SurroundSpatialSetup` directory retains the original restore point through repeat setup and mod-only updates. Keep that directory and the extracted add-on. **Restore.cmd** restores the original files; **Diagnostic.cmd** and **Conventional.cmd** provide optional comparison/logging. Full instructions are in the add-on's `README.txt`.
+
+An existing developer-prototype installation must first use its original `Restore-LocalSpatialAudio.ps1`. Public setup refuses to treat an already-installed identical spatial DLL as an original backup. Your existing prototype remains usable while testing the new installer separately.
+
+Installer regression checks: `tools/Test-SpatialInstaller.ps1 -AddonPath <add-on-zip>` under Windows PowerShell 5.1. Add `-ProbeDevice` for the hardware preflight. The file-only checks do not launch the game or alter the normal installation.
 
 ## Start the isolated game
 
@@ -30,7 +40,7 @@ This requires more than a normal mod ZIP: the installer replaces `Lib/OpenAL32.d
 .\tools\Install-LocalSpatialAudio.ps1
 ```
 
-It builds and installs the mod, preserves the other mod settings while selecting spatial output and enabling debug tools, and backs up the previous mod ZIP, native DLL and mod configuration under `VintagestoryData/SurroundSpatialTest/<timestamp>`. Other mods and worlds are retained. The ZIP keeps the current 1.2.3 metadata for local feature testing.
+It builds and installs the mod, preserves the other mod settings while selecting spatial output and enabling debug tools, and backs up the previous mod ZIP, native DLL and mod configuration under `VintagestoryData/SurroundSpatialTest/<timestamp>`. Other mods and worlds are retained. The ZIP reads its version from current mod metadata.
 
 **Use your ordinary Vintage Story shortcut or executable.** Setup installs `alsoft.ini` beside the game executable; OpenAL automatically reads it before initializing audio, regardless of the working directory. No machine-wide environment variables or special launch arguments are required. The mod recognizes the game-local configuration and retains the selected spatial mode.
 
@@ -90,4 +100,4 @@ Results and native logs are under `bin/spatial-tests/patched`. Hardware tests re
 
 The game's bundled OpenAL Soft 1.23.0 predates the Windows spatial backend. During implementation, the upstream 1.25.2 spatial path also reproduced a native ownership bug on this machine. The feature therefore builds a pinned 1.25.2 source revision with a small allocation/cleanup correction and an activation diagnostic. See [native/README.md](../native/README.md) for the root cause, source patch and rebuild details.
 
-Installing only the mod DLL/ZIP is insufficient for this prototype. The installed runtime plus game-local configuration support normal game launch; the experimental launcher remains useful for native diagnostics. No mod release, native binary publication or upstream bug submission is included.
+Installing only the mod DLL/ZIP is insufficient for this prototype. The installed runtime plus game-local configuration support normal game launch; the experimental launcher remains useful for native diagnostics. Development archives are generated locally; no mod release, native binary publication or upstream bug submission is included.

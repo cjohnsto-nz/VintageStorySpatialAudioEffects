@@ -19,3 +19,9 @@ SHA-256: `47e22c066dffa2f65a1747272978344db845dcef9c7ee118449ec560a44adc8f`
 The exact patched source remains under `bin/openal-source/openal-soft-1.25.2`. The upstream project is LGPL-licensed and includes additional notices for embedded components. The sandbox copies top-level upstream notices into `OpenAL-notices`. If distributing the modified native binary, include the corresponding source (including this patch and build instructions) and retain the applicable upstream notices. Native binaries and source archives are not committed to this repository.
 
 The source patch is local; no upstream issue or pull request has been submitted.
+
+## Distribution build verification
+
+Fresh-build testing exposed a Git behavior that could silently skip the patch when the source was extracted under this repository's ignored `bin` directory. The builder now stops Git repository discovery at the extracted source's parent, normalizes patch line endings, verifies the applied patch in reverse, and checks the ownership fix in the resulting source. Cached builds additionally require `PatchVerified` and a matching full source-tree hash. A legacy cache lacking that evidence is rebuilt.
+
+The release builder produces a complete modified source archive with a standalone build recipe, dated modification notices and the checked-in patch. The add-on retains standalone upstream licenses and the source files containing embedded component notices. The build manifest identifies the native source/patch/binary hashes and compiler. Final publication still requires reviewing the assembled notices/source bundle and testing the exact release candidate.

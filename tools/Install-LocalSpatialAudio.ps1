@@ -14,7 +14,8 @@ dotnet build (Join-Path $root 'VintageStorySurroundSound.csproj') -c Release "-p
 if ($LASTEXITCODE -ne 0) { throw 'Release build failed.' }
 $runtime = & (Join-Path $PSScriptRoot 'Get-SpatialRuntime.ps1')
 $package = Join-Path $root 'bin\Release\ModPackage\VintageStorySurroundSound'
-$zipPath = Join-Path $root 'bin\Release\vintagestorysurroundsound_1.2.3-spatial-test.zip'
+$version = (Get-Content -LiteralPath (Join-Path $root 'modinfo.json') -Raw | ConvertFrom-Json).version
+$zipPath = Join-Path $root ('bin\Release\vintagestorysurroundsound_' + $version + '-spatial-test.zip')
 # ZipFile uses portable forward-slash entry paths.
 if (Test-Path -LiteralPath $zipPath) { Remove-Item -LiteralPath $zipPath }
 [IO.Compression.ZipFile]::CreateFromDirectory($package, $zipPath)
@@ -39,7 +40,7 @@ foreach ($entry in Get-ChildItem -LiteralPath $modDirectory) {
     }
 }
 if ($matching.Count -gt 1) { throw 'Multiple installed Surround Sound archives found; resolve duplicates first.' }
-$modTarget = if ($matching.Count) { $matching[0] } else { Join-Path $modDirectory 'vintagestorysurroundsound_1.2.3.zip' }
+$modTarget = if ($matching.Count) { $matching[0] } else { Join-Path $modDirectory ('vintagestorysurroundsound_' + $version + '.zip') }
 $session = Join-Path $DataPath ('SurroundSpatialTest\' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
 New-Item -ItemType Directory -Path $session -Force | Out-Null
 $modConfig = Join-Path $DataPath 'ModConfig\vintagestorysurroundsound.json'

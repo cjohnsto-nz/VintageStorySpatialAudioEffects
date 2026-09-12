@@ -1,16 +1,16 @@
 # Spatial audio release plan
 
-Status: proposed release process; the feature and local developer setup are implemented, while public packaging and hardware qualification remain open. This document is the release checklist for the spatial-audio PR. Checking in the implementation does not publish the add-on.
+Status: implementation and prebuilt development packaging are available. The Windows PowerShell 5.1 installer has file-based install/restore and failure-recovery tests; final candidate review, clean-machine installation and hardware qualification remain open. This document is the release checklist for the spatial-audio PR. Checking in the implementation does not publish the add-on.
 
 ## Release scope and decisions
 
 - Keep one Surround Sound mod. Ordinary surround and the optional pitch setting remain available through the normal mod installation. Windows height output additionally requires the spatial runtime and startup configuration.
 - Publish the spatial runtime as an optional, prebuilt Windows x64 add-on. Users must not need Git, .NET SDK, CMake, Visual Studio, PowerShell 7 or a source checkout to install it.
 - Treat Vintage Story updates as compatibility boundaries. Qualify named game versions for each release. **Automatic repair, automatic DLL replacement after game updates, and compatibility across untested game versions are out of scope.** A changed or unsupported installation gets a clear explanation and manual setup instructions.
-- Initially qualify Windows x64 and Vintage Story 1.22.7, the installed version used for development. Expand declared support only after testing the other versions. Do not infer support for all 1.22 releases from the current `game: 1.22.0` metadata. No 1.21, Linux or macOS spatial support is planned for this release.
+- Initially qualify Windows x64 and Vintage Story 1.22.7, the installed version used for development. The 2.0.0 mod now declares that minimum game version, and the add-on accepts exactly 1.22.7. Expand declared support only after testing other versions. No 1.21, Linux or macOS spatial support is planned for this release.
 - Describe the feature as experimental Windows Spatial Audio with 7.1.4 height output. The implementation supplies a static channel bed to Windows; it is not encoded-file passthrough, a Dolby encoder bundled with the mod, or one dynamic Atmos object per game source. Verify Atmos on the receiver separately.
 - Keep `OutputMode=Auto` and `FollowCameraPitch=false` as normal defaults. The spatial installer explicitly selects spatial output; pitch remains an optional setting. The maintainer's current local test deliberately enables pitch.
-- Proposed mod release sequence: **1.3.0 prerelease**, then **1.3.0 stable** after the acceptance gates pass. Confirm which prerelease notation the game and VS Mod DB accept before changing metadata. The current 1.2.3 metadata identifies the development baseline, not a public spatial release.
+- The maintainer selected **2.0.0** for the combined spatial/installer and Bell-occlusion update. Mod metadata and assembly versions are updated together. Candidate archives remain marked development builds until release review and hardware checks are complete.
 - Version the native dependency separately: initially OpenAL Soft `1.25.2+surround-spatial1`, with source, patch, build recipe and resulting binary hashes. Mod-only changes should not require reinstalling an unchanged native runtime.
 
 ## What is already implemented
@@ -47,11 +47,11 @@ Owner: packaging implementation.
 | Corresponding native source ZIP | Exact modified source, dated modification notices, patch, complete build recipe and applicable license/notices | Local paths and private build data |
 | Checksums / release manifest | SHA-256 of each artifact; candidate commit, game compatibility, mod version and runtime identity | Machine-specific absolute paths |
 
-- [ ] Build the mod against an explicitly selected installed SDK. Keep proprietary game dependencies on the maintainer's build machine or an appropriately provisioned private runner; do not put them in published artifacts.
-- [ ] Build native code from the pinned archive and checked-in patch in a clean build directory. Record compiler, Windows SDK, architecture and build options. Hash the actual deliverable; do not promise identical DLL hashes across different compiler environments.
-- [ ] Separate build-time scripts from distribution-time setup. The current `Install-LocalSpatialAudio.ps1` builds from source and requires PowerShell 7, so it is a developer utility, not the public installer.
-- [ ] Use an `Install.cmd` entry point with a Windows PowerShell 5.1-compatible setup script, or a small packaged setup executable. Select one implementation in the packaging change and test on a machine without developer tools. Do not require elevation for a writable per-user game install; request it only if the selected protected game directory requires it.
-- [ ] Generate ZIPs with `/` entry separators and inspect their root layout. Verify every artifact against its release manifest.
+- [x] Build the mod against an explicitly selected installed SDK. Keep proprietary game dependencies on the maintainer's build machine or an appropriately provisioned private runner; do not put them in published artifacts.
+- [x] Build native code from the pinned archive and checked-in patch in a clean build directory. Record compiler, Windows SDK, architecture and build options. Hash the actual deliverable; do not promise identical DLL hashes across different compiler environments.
+- [x] Separate build-time scripts from distribution-time setup. `Build-SpatialRelease.ps1` produces a prebuilt add-on containing `distribution/Setup.ps1` and `Install.cmd`. The older `Install-LocalSpatialAudio.ps1` remains a developer-only utility.
+- [ ] Final clean-machine check: the selected implementation is `Install.cmd` plus Windows PowerShell 5.1 setup. Automated tests run under 5.1 with developer tools removed from PATH, but a separate machine without those tools still needs testing. Do not require elevation for a writable per-user game install; request it only if the selected protected game directory requires it.
+- [x] Generate ZIPs with `/` entry separators and inspect their root layout. Verify every artifact against its release manifest.
 - [ ] Retain OpenAL and embedded-component notices and provide corresponding modified source alongside the binary. Audit the complete assembled source/artifact, not only the top-level COPYING file. References: [OpenAL license](https://github.com/kcat/openal-soft/blob/1.25.2/COPYING), [native build notes](../native/README.md).
 
 Exit: downloadable candidate artifacts that install without a source tree or build toolchain.
@@ -64,14 +64,14 @@ The intended user flow is: install the normal mod, run spatial setup once, selec
 
 - [ ] Locate or allow selection of the game and data directories. Verify Windows x64, the declared game version, writable destination and a closed game. Do not terminate the user's game.
 - [ ] Show which game DLL, mod and configuration will change before applying setup. Preserve other mods, saves and settings.
-- [ ] Capture the original DLL, original matching mod archive and relevant configuration once, before replacement. Keep that original restore point through repeat setup and mod-only updates. The current timestamped developer installer needs improvement here: rerunning it can otherwise make a newer backup refer to an already patched runtime.
-- [ ] Install only verified payloads. Track completed writes and roll back this installation attempt if copying or configuration fails. Test interrupted/partial setup as well as success.
-- [x] Implement normal launch through EXE-local `alsoft.ini`, recognize it in the mod, preserve its original restore point, and probe the startup mechanism without audio environment overrides. Public packaging remains open.
-- [ ] Package an optional diagnostic launcher that configures only its game process, including the chosen data path and native logging. Do not alter machine-wide OpenAL settings or require this launcher for everyday use.
-- [ ] Provide a conventional-audio launch option and a clearly separate full restore option. Conventional launch continues using the patched DLL; full restore returns the original DLL and settings.
-- [ ] Recognize an already installed identical runtime and leave it in place during a mod-only update. Reject conflicting duplicate mod installations with an actionable explanation.
-- [ ] Restore the exact selected installation without deleting unrelated files. Retain the latest user config before reverting it. If a file changed since setup, explain the conflict rather than overwriting it blindly.
-- [ ] Perform a silent backend check and surface unsupported hardware, missing spatial configuration or stream failure clearly. Never equate successful stream activation with confirmed Dolby receiver format.
+- [x] Capture the original DLL, original matching mod archive and relevant configuration once, before replacement. Keep that original restore point through repeat setup and mod-only updates. The public installer uses one active restore record, retaining original backups through repeat/mod-only updates. It refuses to adopt an identical untracked runtime; developer-prototype users must restore their original installation first.
+- [x] Install only verified payloads. Track completed writes and roll back this installation attempt if copying or configuration fails. Test interrupted/partial setup as well as success.
+- [x] Implement normal launch through EXE-local `alsoft.ini`, recognize it in the mod, preserve its original restore point, and probe the startup mechanism without audio environment overrides. Included in the prebuilt development add-on.
+- [x] Package an optional diagnostic launcher that configures only its game process, including the chosen data path and native logging. Do not alter machine-wide OpenAL settings or require this launcher for everyday use.
+- [x] Provide a conventional-audio launch option and a clearly separate full restore option. Conventional launch continues using the patched DLL; full restore returns the original DLL and settings.
+- [x] Recognize an already installed identical runtime and leave it in place during a mod-only update. Reject conflicting duplicate mod installations with an actionable explanation.
+- [x] Restore the exact selected installation without deleting unrelated files. Retain the latest user config before reverting it. If a file changed since setup, explain the conflict rather than overwriting it blindly.
+- [x] Perform a silent backend check and surface unsupported hardware, missing spatial configuration or stream failure clearly. Never equate successful stream activation with confirmed Dolby receiver format.
 - [ ] Test ordinary paths, paths containing spaces, a custom data directory, repeat setup, mod-only update, full restore and failure rollback. Future game-version migration or automatic repair is not required.
 
 Exit: install/restore round trip verified against original hashes on a clean test installation, with the game still usable in conventional mode.
@@ -116,4 +116,12 @@ Owner: maintainer. Publication and merging require the corresponding explicit in
 
 Propose submitting the ownership fix and minimal reproduction upstream as a separate action. Upstream acceptance would allow replacing the local patch with a qualified upstream release later; it is not a prerequisite for an accurately labeled experimental beta. Never substitute a newer native library without rebuilding and validating that exact dependency.
 
-The immediate next implementation task after this PR is **public packaging and install/restore verification**, followed by the hardware acceptance record. Automatic game-update repair is not part of either task.
+The next release steps are **candidate review, a clean-machine install check and the hardware acceptance record**. The packaged development candidate and automated installer matrix are available through `Build-SpatialRelease.ps1` and `Test-SpatialInstaller.ps1`. Automatic game-update repair is not part of either task.
+
+## Implemented packaging and installer verification
+
+`tools/Build-SpatialRelease.ps1` builds the mod, builds or verifies a pinned native source tree, and produces the normal mod ZIP, Windows add-on ZIP, corresponding modified-source ZIP and SHA-256 list. Artifact manifests record the commit, dirty-tree status, SDK/game version, compiler version and native source/patch/DLL hashes. Candidates remain explicitly marked development builds with mod version 2.0.0; building them does not publish a release.
+
+`distribution/Setup.ps1` defaults to a read-only preview; `Install.cmd` displays the selected paths and requests confirmation before applying setup. It verifies packaged hashes and the declared game version, preserves unrelated configuration fields, retains original backups, serializes setup with a file lock, and journals replacements. An interrupted operation is recovered before a subsequent write. Atomic sibling-file replacement avoids partially overwritten game DLLs; rollback and restore validate their saved copies. Device preflight runs in a separate Windows PowerShell process with a 20-second timeout.
+
+`tools/Test-SpatialInstaller.ps1 -AddonPath <zip>` extracts the actual add-on and exercises Windows PowerShell 5.1 with paths containing spaces, custom data, an existing mod with a custom filename, absent original files, repeat setup, mod-only update, duplicate/corrupt input rejection, conflicting edits, a real mid-operation sharing violation, interrupted-operation recovery and exact original hashes after restore. `-ProbeDevice` additionally exercises the installer's packaged preflight. These are file fixtures using the real game executable for version identification, not automated gameplay tests.

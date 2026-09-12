@@ -186,9 +186,8 @@ internal static class EntitySoundPosTrackingController
         }
 
         float basePitch = sound.Params?.Pitch ?? 1f;
-        float baseVolume = sound.Params?.Volume ?? 1f;
         float initialDistance = soundPosition != null && listenerPosition != null ? Distance(soundPosition, listenerPosition) : 0f;
-        var tracked = new TrackedEntitySound(sound, metadata, basePitch, basePitch, baseVolume, initialDistance, soundPosition, listenerPosition, capi?.ElapsedMilliseconds ?? 0);
+        var tracked = new TrackedEntitySound(sound, metadata, basePitch, basePitch, initialDistance, soundPosition, listenerPosition, capi?.ElapsedMilliseconds ?? 0);
         if (shouldApplyBlockOcclusion)
         {
             ApplyInitialBlockOcclusion(tracked, soundPosition);
@@ -207,7 +206,7 @@ internal static class EntitySoundPosTrackingController
         tracked.Sound.SetPosition(position);
         if (ShouldApplyBlockOcclusion(entity))
         {
-            SoundOcclusion.ApplyDynamicOcclusion(tracked.Sound, position, tracked.BaseVolume);
+            SoundOcclusion.ApplyDynamicOcclusion(tracked.Sound, position);
         }
         ApplyDopplerPitch(tracked, position);
         return true;
@@ -339,7 +338,7 @@ internal static class EntitySoundPosTrackingController
 
     private static void ApplyInitialBlockOcclusion(TrackedEntitySound tracked, Vec3f soundPosition)
     {
-        SoundOcclusion.ApplyInitialOcclusion(tracked.Sound, soundPosition, tracked.BaseVolume);
+        SoundOcclusion.ApplyInitialOcclusion(tracked.Sound, soundPosition);
     }
 
     private static float Distance(Vec3f first, Vec3f second)
@@ -375,13 +374,12 @@ internal static class EntitySoundPosTrackingController
 
     private sealed class TrackedEntitySound
     {
-        public TrackedEntitySound(ILoadedSound sound, EntitySoundPosTrackingMetadata metadata, float basePitch, float currentPitch, float baseVolume, float smoothedDistance, Vec3f lastSoundPosition, Vec3f lastListenerPosition, long lastUpdateMs)
+        public TrackedEntitySound(ILoadedSound sound, EntitySoundPosTrackingMetadata metadata, float basePitch, float currentPitch, float smoothedDistance, Vec3f lastSoundPosition, Vec3f lastListenerPosition, long lastUpdateMs)
         {
             Sound = sound;
             Metadata = metadata;
             BasePitch = basePitch;
             CurrentPitch = currentPitch;
-            BaseVolume = baseVolume;
             SmoothedDistance = smoothedDistance;
             LastSoundPosition = lastSoundPosition;
             LastListenerPosition = lastListenerPosition;
@@ -392,7 +390,6 @@ internal static class EntitySoundPosTrackingController
         public EntitySoundPosTrackingMetadata Metadata { get; }
         public float BasePitch { get; }
         public float CurrentPitch { get; set; }
-        public float BaseVolume { get; }
         public float SmoothedDistance { get; set; }
         public float SmoothedClosingSpeed { get; set; }
         public Vec3f LastSoundPosition { get; private set; }

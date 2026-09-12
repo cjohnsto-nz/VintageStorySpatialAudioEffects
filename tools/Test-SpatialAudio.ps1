@@ -1,12 +1,13 @@
 #requires -Version 7.0
 [CmdletBinding()]
-param([switch]$ProbeDevice)
+param([switch]$ProbeDevice, [string]$RuntimePath)
 $ErrorActionPreference = 'Stop'
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $project = Join-Path $root 'tests\SpatialAudio.Tests\SpatialAudio.Tests.csproj'
 dotnet run --project $project -c Release
 if ($LASTEXITCODE -ne 0) { throw 'Managed spatial tests failed.' }
-$runtime = & (Join-Path $PSScriptRoot 'Get-SpatialRuntime.ps1')
+$runtime = if ($RuntimePath) { [pscustomobject]@{ DllPath = (Resolve-Path -LiteralPath $RuntimePath).Path } }
+    else { & (Join-Path $PSScriptRoot 'Get-SpatialRuntime.ps1') }
 $results = Join-Path $root 'bin\spatial-tests\patched'
 foreach ($direction in @('Above', 'Front')) {
     dotnet run --project $project -c Release --no-build -- --render $runtime.DllPath (Join-Path $results $direction) $direction
