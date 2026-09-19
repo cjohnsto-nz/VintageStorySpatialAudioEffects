@@ -15,12 +15,12 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
     private const int MaxActiveLeafEmitters = 72;
     private const int MaxActiveEmittersPerPool = 25;
     private const int MaxConcurrentLeafVoices = 75;
-    private const long DiscoveryRefreshMs = 450;
+    private const long DiscoveryRefreshMs = 300;
     private const int PlaybackTickMs = 150;
-    private const float BaseEmitsPerSecond = 2.1f;
+    private const float BaseEmitsPerSecond = 2.8f;
     private const float WindEmitsPerSecond = 3.2f;
     private const float LeafDensityEmitsPerSecond = 1.4f;
-    private const float MaxEmissionBudget = 3.0f;
+    private const float MaxEmissionBudget = 4.0f;
     private const int MaxEmitsPerTick = 2;
     private const double ImmediateRingMaxDistance = 2.0;
     private const double NearRingMaxDistance = 5.0;
@@ -34,6 +34,15 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
     private const double ActiveEmitterKeepDistance = 40.0;
     private const double BehindEmitterCullDistance = 24.0;
     private const double MovementRefreshDistance = 1.4;
+    // Turning further than this (about 25 degrees) rescans: the candidates are weighted by the view.
+    private const double TurnRefreshCos = 0.906;
+    // Playing rustles fade out once behind the view (more than ~110 degrees off it) and further
+    // than BehindFadeDistance, or anywhere beyond FadeDistance.
+    private const double BehindFadeDistance = 5.0;
+    private const double BehindCos = -0.35;
+    private const double FadeDistance = 32.0;
+    // Share of new emitters per direction relative to the view: ahead, left, right, behind.
+    private static readonly double[] DirectionWeights = { 0.55, 0.175, 0.175, 0.10 };
     private const int DiscoveryHorizontalRadius = 20;
     private const int DiscoveryVerticalRadius = 10;
     private const double MaxScanDistanceSq = FarRingMaxDistance * FarRingMaxDistance;
@@ -56,6 +65,8 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
     private readonly Dictionary<long, long> recentLeafTriggers = new();
     private readonly Dictionary<long, ActiveLeafEmitterState> activeLeafEmitters = new();
     private readonly List<ActiveLeafVoice> activeLeafVoices = new();
+    private double lastDiscoveryFacingX;
+    private double lastDiscoveryFacingZ;
     private readonly List<DebugEmitter> activeEmitters = new();
     private readonly object activeEmittersLock = new();
 
@@ -189,10 +200,10 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
         FacingContext facing = CreateFacingContext(playerEntity.Pos, deltaX, deltaY, deltaZ, horizontalMovement);
         lastFacing = facing;
 
-        CullOutOfRangeEmitters(playerEntity.Pos, facing, nowMs);
+        FadeOutUnwantedVoices(playerEntity.Pos, facing, nowMs);
         CleanupCooldowns(nowMs);
 
-        if (ShouldRefreshDiscovery(currentPos, windExposure, nowMs))
+        if (ShouldRefreshDiscovery(currentPos, facing, windExposure, nowMs))
         {
             RefreshCandidateCache(playerEntity.Pos, facing, windExposure, nowMs);
         }
@@ -206,9 +217,14 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
         TryEmitFromCache(playerEntity.Pos, facing, windExposure, roomLoss, nowMs);
     }
 
-    private bool ShouldRefreshDiscovery(Vec3d playerPos, float windExposure, long nowMs)
+    private bool ShouldRefreshDiscovery(Vec3d playerPos, FacingContext facing, float windExposure, long nowMs)
     {
         if (!hasDiscoveryCenter)
+        {
+            return true;
+        }
+
+        if ((facing.FacingNormX * lastDiscoveryFacingX) + (facing.FacingNormZ * lastDiscoveryFacingZ) < TurnRefreshCos)
         {
             return true;
         }
@@ -343,7 +359,13 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
                     bool isGazePreloadCandidate = IsInGazePreloadRegion(eyePosition, viewVector, centerX, centerY, centerZ);
 
                     double horizontalDistance = Math.Sqrt(horizontalDistanceSq);
-                    double facingScore = facing.IsMoving ? (((relX * facing.FacingNormX) + (relZ * facing.FacingNormZ) + 1.0) * 0.5) : 0.5;
+                    double facingCos = ((relX * facing.FacingNormX) + (relZ * facing.FacingNormZ)) / horizontalDistance;
+                    if (facingCos < BehindCos && horizontalDistance > BehindFadeDistance)
+                    {
+                        continue;  // behind the view: it would fade out as soon as it started
+                    }
+
+                    double facingScore = (facingCos + 1.0) * 0.5;
                     double lookAheadScore = facing.IsMoving ? Math.Max(0.0, 1.0 - (Math.Sqrt(aheadDistanceSq) / 42.0)) : 0.5;
                     double gazeScore = isGazePreloadCandidate ? GetGazeScore(eyePosition, viewVector, centerX, centerY, centerZ) : 0.0;
                     double distanceScore = horizontalDistance <= 2.4
@@ -355,7 +377,7 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
                     double heightPenalty = isGazePreloadCandidate ? 0.0 : Math.Abs(verticalOffset - targetVerticalOffset);
                     double belowBonus = verticalOffset < 0 ? Math.Min(0.08, Math.Abs(verticalOffset) * 0.03) : 0;
                     double aboveBonus = verticalOffset > 0.75 ? Math.Min(0.16, (verticalOffset - 0.75) * 0.035) : 0;
-                    double score = (distanceScore * 0.46) + (facingScore * 0.12) + (lookAheadScore * 0.18) + (gazeScore * 0.14) + belowBonus + aboveBonus - (heightPenalty * 0.025);
+                    double score = (distanceScore * 0.40) + (facingScore * 0.22) + (lookAheadScore * 0.14) + (gazeScore * 0.14) + belowBonus + aboveBonus - (heightPenalty * 0.025);
                     if (score <= 0.1)
                     {
                         continue;
@@ -391,6 +413,8 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
         cachedWindExposure = windExposure;
         lastDiscoveryRefreshMs = nowMs;
         lastDiscoveryCenter.Set(playerPos.X, playerPos.Y, playerPos.Z);
+        lastDiscoveryFacingX = facing.FacingNormX;
+        lastDiscoveryFacingZ = facing.FacingNormZ;
         hasDiscoveryCenter = true;
     }
 
@@ -475,30 +499,49 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
             return 0;
         }
 
+        // Mostly ahead of the view: each emitter picks a direction by DirectionWeights (among the
+        // directions that still have candidates), then a candidate in it.
         int emitted = 0;
         var buckets = BuildDirectionalBuckets(sourcePool, playerPos, facing);
-        int bucketIndex = 0;
-        int stalledBuckets = 0;
-
-        while (emitted < targetCount && stalledBuckets < buckets.Length)
+        while (emitted < targetCount)
         {
-            List<CandidateLeafBlock> bucket = buckets[bucketIndex];
-            if (bucket.Count == 0)
+            double total = 0.0;
+            for (int i = 0; i < buckets.Length; i++)
             {
-                stalledBuckets++;
-            }
-            else
-            {
-                CandidateLeafBlock candidate = bucket[random.Next(bucket.Count)];
-                bucket.Remove(candidate);
-                if (TryEmitSpecific(candidate, nowMs, windExposure, roomLoss, leafFactor, usedKeys, ring))
-                {
-                    emitted++;
-                    stalledBuckets = 0;
-                }
+                total += buckets[i].Count > 0 ? DirectionWeights[i] : 0.0;
             }
 
-            bucketIndex = (bucketIndex + 1) % buckets.Length;
+            if (total <= 0.0)
+            {
+                break;
+            }
+
+            double pick = random.NextDouble() * total;
+            int bucketIndex = 0;
+            for (; bucketIndex < buckets.Length - 1; bucketIndex++)
+            {
+                double weight = buckets[bucketIndex].Count > 0 ? DirectionWeights[bucketIndex] : 0.0;
+                if (pick < weight)
+                {
+                    break;
+                }
+
+                pick -= weight;
+            }
+
+            if (buckets[bucketIndex].Count == 0)
+            {
+                bucketIndex = Array.FindIndex(buckets, b => b.Count > 0);  // rounding landed on an empty last one
+            }
+
+            List<CandidateLeafBlock> bucket = buckets[bucketIndex];
+
+            CandidateLeafBlock candidate = bucket[random.Next(bucket.Count)];
+            bucket.Remove(candidate);
+            if (TryEmitSpecific(candidate, nowMs, windExposure, roomLoss, leafFactor, usedKeys, ring))
+            {
+                emitted++;
+            }
         }
 
         return emitted;
@@ -569,13 +612,40 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
         double sx = candidate.Pos.X + 0.5 + ((random.NextDouble() - 0.5) * 0.4);
         double sy = candidate.Pos.Y + 0.55 + (random.NextDouble() * 0.45);
         double sz = candidate.Pos.Z + 0.5 + ((random.NextDouble() - 0.5) * 0.4);
-        recentLeafTriggers[key] = nowMs;
-        activeLeafEmitters[key] = new ActiveLeafEmitterState(nowMs + LeafEmitterLifetimeMs, ring);
+        if (IsNearPlayingVoice(sx, sy, sz))
+        {
+            return false;  // one tree needs one rustle at a time, not one per leaf block
+        }
 
-        return PlayEmitterAt(sx, sy, sz, candidate.IsReedLike, windExposure, roomLoss, leafFactor, ring, nowMs);
+        recentLeafTriggers[key] = nowMs;
+        if (!PlayEmitterAt(key, sx, sy, sz, candidate.IsReedLike, windExposure, roomLoss, leafFactor, ring, nowMs))
+        {
+            return false;
+        }
+
+        activeLeafEmitters[key] = new ActiveLeafEmitterState(nowMs + LeafEmitterLifetimeMs, ring);
+        return true;
     }
 
-    private bool PlayEmitterAt(double sx, double sy, double sz, bool isReedLike, float windExposure, float roomLoss, float leafFactor, LeafRustleEmitterRing ring, long nowMs)
+    private bool IsNearPlayingVoice(double x, double y, double z)
+    {
+        double spacing = Math.Max(0.0, SurroundWeatherConfigManager.Current.LeafRustleEmitterSpacing);
+        double spacingSq = spacing * spacing;
+        foreach (ActiveLeafVoice voice in activeLeafVoices)
+        {
+            double dx = voice.X - x;
+            double dy = voice.Y - y;
+            double dz = voice.Z - z;
+            if ((dx * dx) + (dy * dy) + (dz * dz) < spacingSq)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool PlayEmitterAt(long key, double sx, double sy, double sz, bool isReedLike, float windExposure, float roomLoss, float leafFactor, LeafRustleEmitterRing ring, long nowMs)
     {
         CleanupLeafVoiceTracking(nowMs);
         if (activeLeafVoices.Count >= MaxConcurrentLeafVoices)
@@ -600,61 +670,67 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
             : GameMath.Clamp(1f + (centeredRandom * 0.28f * pitchVariationMultiplier) + ((windExposure - 0.5f) * 0.12f), 0.6f, 1.42f);
         pitch = GameMath.Max(0f, pitch - (roomLoss / 4f));
 
-        capi.World.PlaySoundAt(sound, sx, sy, sz, null, EnumSoundType.Ambient, pitch, 150f, volume);
-        activeLeafVoices.Add(new ActiveLeafVoice(nowMs + LeafVoiceLifetimeMs, ring));
-        RegisterDebugEmitter(sx, sy, sz, ring, nowMs, volume);
+        // Loaded rather than played, to keep the handle: a rustle that falls behind fades out.
+        ILoadedSound loaded = capi.World.LoadSound(new SoundParams
+        {
+            Location = sound,
+            Position = new Vec3f((float)sx, (float)sy, (float)sz),
+            RelativePosition = false,
+            Range = 150f,
+            SoundType = EnumSoundType.Ambient,
+            Pitch = pitch,
+            Volume = volume,
+            ShouldLoop = false,
+            DisposeOnFinish = true,
+        });
+        if (loaded == null)
+        {
+            return false;
+        }
+
+        loaded.Start();
+        DebugEmitter debug = RegisterDebugEmitter(sx, sy, sz, ring, nowMs, volume);
+        activeLeafVoices.Add(new ActiveLeafVoice(loaded, key, sx, sy, sz, nowMs + LeafVoiceLifetimeMs, ring, debug));
         return true;
     }
 
-    private void CullOutOfRangeEmitters(EntityPos playerPos, FacingContext facing, long nowMs)
+    /// <summary>
+    /// Fades out rustles that have fallen behind the view (beyond the nearest few blocks) or out
+    /// of range, so they stop taking the place of new ones ahead.
+    /// </summary>
+    private void FadeOutUnwantedVoices(EntityPos playerPos, FacingContext facing, long nowMs)
     {
-        if (activeLeafEmitters.Count == 0)
+        float fadeSeconds = Math.Max(0.05f, SurroundWeatherConfigManager.Current.LeafRustleFadeOutSeconds);
+        for (int i = activeLeafVoices.Count - 1; i >= 0; i--)
         {
-            return;
-        }
-
-        Vec3d lookAheadCenter = new(
-            playerPos.X + (facing.FacingNormX * (12.0 + (facing.MovementFactor * 24.0))),
-            playerPos.Y,
-            playerPos.Z + (facing.FacingNormZ * (12.0 + (facing.MovementFactor * 24.0)))
-        );
-
-        var expired = new List<long>();
-        foreach (var pair in activeLeafEmitters)
-        {
-            if (pair.Value.ExpiresMs <= nowMs)
+            ActiveLeafVoice voice = activeLeafVoices[i];
+            if (voice.ExpiresMs <= nowMs || voice.Sound.IsDisposed)
             {
-                expired.Add(pair.Key);
+                continue;  // CleanupLeafVoiceTracking lets it go
+            }
+
+            double relX = voice.X - playerPos.X;
+            double relY = voice.Y - playerPos.Y;
+            double relZ = voice.Z - playerPos.Z;
+            double horizontal = Math.Sqrt((relX * relX) + (relZ * relZ));
+            double distance = Math.Sqrt((horizontal * horizontal) + (relY * relY));
+            double facingCos = horizontal > 1e-6 ? ((relX * facing.FacingNormX) + (relZ * facing.FacingNormZ)) / horizontal : 1.0;
+            bool behind = facingCos < BehindCos && horizontal > BehindFadeDistance;
+            if (!behind && distance <= FadeDistance)
+            {
                 continue;
             }
 
-            DecodeKey(pair.Key, out int x, out int y, out int z);
-            double cx = x + 0.5;
-            double cy = y + 0.5;
-            double cz = z + 0.5;
-
-            double relX = cx - playerPos.X;
-            double relY = cy - playerPos.Y;
-            double relZ = cz - playerPos.Z;
-            double playerDistanceSq = (relX * relX) + (relY * relY) + (relZ * relZ);
-
-            double aheadX = cx - lookAheadCenter.X;
-            double aheadY = cy - lookAheadCenter.Y;
-            double aheadZ = cz - lookAheadCenter.Z;
-            double lookAheadDistanceSq = (aheadX * aheadX) + (aheadY * aheadY) + (aheadZ * aheadZ);
-
-            bool isBehind = facing.IsMoving && ((relX * facing.FacingNormX) + (relZ * facing.FacingNormZ)) < 0.0;
-            if (playerDistanceSq > ActiveEmitterKeepDistance * ActiveEmitterKeepDistance
-                || (isBehind && playerDistanceSq > BehindEmitterCullDistance * BehindEmitterCullDistance)
-                || (playerDistanceSq > 26.0 * 26.0 && (!facing.IsMoving || lookAheadDistanceSq > 34.0 * 34.0)))
+            voice.Sound.FadeOutAndStop(fadeSeconds);
+            activeLeafVoices.RemoveAt(i);
+            activeLeafEmitters.Remove(voice.Key);
+            if (voice.Debug != null)
             {
-                expired.Add(pair.Key);
+                lock (activeEmittersLock)
+                {
+                    voice.Debug.ExpiresMs = nowMs;
+                }
             }
-        }
-
-        foreach (long key in expired)
-        {
-            activeLeafEmitters.Remove(key);
         }
     }
 
@@ -703,7 +779,7 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
 
     private void CleanupLeafVoiceTracking(long nowMs)
     {
-        activeLeafVoices.RemoveAll(voice => voice.ExpiresMs <= nowMs);
+        activeLeafVoices.RemoveAll(voice => voice.ExpiresMs <= nowMs || voice.Sound.IsDisposed);
     }
 
     private void ClearCandidateCache()
@@ -769,9 +845,23 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
 
     private static FacingContext CreateFacingContext(EntityPos playerPos, double deltaX, double deltaY, double deltaZ, double horizontalMovement)
     {
+        // Where the player looks, not where they walk: strafing or backing up still fills the view.
         bool isMoving = horizontalMovement > 0.02;
-        double motionLength = Math.Max(0.0001, Math.Sqrt((deltaX * deltaX) + (deltaZ * deltaZ)));
-        GetFacingVector(playerPos, deltaX, deltaZ, isMoving, motionLength, out double facingNormX, out double facingNormZ);
+        Vec3f view = playerPos.GetViewVector();
+        double length = Math.Sqrt((view.X * view.X) + (view.Z * view.Z));
+        double facingNormX;
+        double facingNormZ;
+        if (length > 1e-3)
+        {
+            facingNormX = view.X / length;
+            facingNormZ = view.Z / length;
+        }
+        else
+        {
+            facingNormX = -Math.Sin(playerPos.Yaw);  // looking straight up or down
+            facingNormZ = Math.Cos(playerPos.Yaw);
+        }
+
         float movementFactor = GameMath.Clamp((float)(horizontalMovement / 0.2), 0f, 1f);
         return new FacingContext(isMoving, movementFactor, facingNormX, facingNormZ);
     }
@@ -883,23 +973,6 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
             || path.Contains("cattail", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static void GetFacingVector(EntityPos playerPos, double deltaX, double deltaZ, bool isMoving, double motionLength, out double facingNormX, out double facingNormZ)
-    {
-        if (isMoving)
-        {
-            facingNormX = deltaX / motionLength;
-            facingNormZ = deltaZ / motionLength;
-            return;
-        }
-
-        double yaw = playerPos.Yaw;
-        facingNormX = -Math.Sin(yaw);
-        facingNormZ = Math.Cos(yaw);
-        double facingLength = Math.Max(0.0001, Math.Sqrt((facingNormX * facingNormX) + (facingNormZ * facingNormZ)));
-        facingNormX /= facingLength;
-        facingNormZ /= facingLength;
-    }
-
     private static long ToKey(int x, int y, int z)
     {
         unchecked
@@ -920,28 +993,31 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
         return (value & 0x100000) != 0 ? value | unchecked((int)0xFFE00000) : value;
     }
 
-    private void RegisterDebugEmitter(double x, double y, double z, LeafRustleEmitterRing ring, long nowMs, float volume)
+    private DebugEmitter RegisterDebugEmitter(double x, double y, double z, LeafRustleEmitterRing ring, long nowMs, float volume)
     {
         if (!SurroundWeatherConfigManager.Current.ShowLeafRustleDebugVisuals)
         {
-            return;
+            return null;
         }
 
+        var emitter = new DebugEmitter
+        {
+            Position = new Vec3d(x, y, z),
+            ExpiresMs = nowMs + LeafEmitterLifetimeMs,
+            Ring = ring,
+            Volume = volume
+        };
         lock (activeEmittersLock)
         {
-            activeEmitters.Add(new DebugEmitter
-            {
-                Position = new Vec3d(x, y, z),
-                ExpiresMs = nowMs + LeafEmitterLifetimeMs,
-                Ring = ring,
-                Volume = volume
-            });
+            activeEmitters.Add(emitter);
         }
+
+        return emitter;
     }
 
     private readonly record struct CandidateLeafBlock(BlockPos Pos, double Score, bool IsReedLike, bool IsGazeCandidate);
     private readonly record struct ActiveLeafEmitterState(long ExpiresMs, LeafRustleEmitterRing Ring);
-    private readonly record struct ActiveLeafVoice(long ExpiresMs, LeafRustleEmitterRing Ring);
+    private sealed record ActiveLeafVoice(ILoadedSound Sound, long Key, double X, double Y, double Z, long ExpiresMs, LeafRustleEmitterRing Ring, DebugEmitter Debug);
     private readonly record struct FacingContext(bool IsMoving, float MovementFactor, double FacingNormX, double FacingNormZ);
 
     private sealed class DebugEmitter

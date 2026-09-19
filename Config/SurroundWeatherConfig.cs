@@ -12,6 +12,12 @@ public sealed class SurroundWeatherConfig
     public float LeafRustleVolumeMultiplier { get; set; } = 1.75f;
     public float LeafRustlePitchVariationMultiplier { get; set; } = 1.5f;
 
+    /// <summary>Blocks between rustles playing at once: one tree gets about one at a time.</summary>
+    public float LeafRustleEmitterSpacing { get; set; } = 5f;
+
+    /// <summary>Seconds a rustle takes to fade out once it falls behind you or out of range.</summary>
+    public float LeafRustleFadeOutSeconds { get; set; } = 0.8f;
+
     /// <summary>Rain landing on the ground around you, from where it lands.</summary>
     public bool EnableRainEmitters { get; set; } = true;
 
