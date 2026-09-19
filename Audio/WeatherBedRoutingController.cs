@@ -1,8 +1,15 @@
+using HarmonyLib;
 using OpenTK.Audio.OpenAL;
 using Vintagestory.Client;
+using Vintagestory.Client.NoObf;
 
-namespace SurroundSoundLab;
+namespace SurroundWeather;
 
+/// <summary>
+/// Vanilla OpenAL only: plays the surround weather beds straight to the speakers. With the Steam
+/// Audio mod in charge, OpenAL is closed and this never runs; that engine plays beds from their
+/// speakers itself.
+/// </summary>
 internal static class WeatherBedRoutingController
 {
     internal static bool IsAmbientBed(LoadedSoundNative sound)
@@ -17,8 +24,8 @@ internal static class WeatherBedRoutingController
     internal static void OnSourceCreated(LoadedSoundNative sound)
     {
         if (sound == null || sound.IsDisposed || !IsAmbientBed(sound)) return;
-        int channels = LoadedSoundNativeChannelMaskPatch.SampleRef(sound)?.Channels ?? 0;
-        int source = LoadedSoundNativeChannelMaskPatch.SourceIdRef(sound);
+        int channels = WeatherBedSourcePatch.SampleRef(sound)?.Channels ?? 0;
+        int source = WeatherBedSourcePatch.SourceIdRef(sound);
         if (source == 0 || channels < 2) return;
 
         // Weather recordings are speaker beds, not sources floating above the
@@ -29,4 +36,16 @@ internal static class WeatherBedRoutingController
             AL.Source(source, (ALSourcei)0x1033,
                 AL.IsExtensionPresent("AL_SOFT_direct_channels_remix") ? 2 : 1);
     }
+}
+
+[HarmonyPatch(typeof(LoadedSoundNative), "createSoundSource")]
+internal static class WeatherBedSourcePatch
+{
+    internal static readonly AccessTools.FieldRef<LoadedSoundNative, AudioMetaData> SampleRef =
+        AccessTools.FieldRefAccess<LoadedSoundNative, AudioMetaData>("sample");
+
+    internal static readonly AccessTools.FieldRef<LoadedSoundNative, int> SourceIdRef =
+        AccessTools.FieldRefAccess<LoadedSoundNative, int>("sourceId");
+
+    public static void Postfix(LoadedSoundNative __instance) => WeatherBedRoutingController.OnSourceCreated(__instance);
 }

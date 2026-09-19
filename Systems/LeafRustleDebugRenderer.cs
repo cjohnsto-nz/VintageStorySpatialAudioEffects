@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Vintagestory.API.Client;
 using Vintagestory.API.MathTools;
 
-namespace SurroundSoundLab;
+namespace SurroundWeather;
 
 internal sealed class LeafRustleDebugRenderer : IRenderer
 {
@@ -22,7 +22,7 @@ internal sealed class LeafRustleDebugRenderer : IRenderer
 
     public void OnRenderFrame(float deltaTime, EnumRenderStage stage)
     {
-        if (!SurroundSoundLabConfigManager.Current.EffectiveShowLeafRustleDebugVisuals || stage != EnumRenderStage.Opaque)
+        if (!SurroundWeatherConfigManager.Current.ShowLeafRustleDebugVisuals || stage != EnumRenderStage.Opaque)
         {
             return;
         }

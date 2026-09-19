@@ -1,16 +1,16 @@
-# VintageStorySurroundSound deployment script
+# VintageStorySurroundWeather deployment script
 # Stops the game, builds the mod, packages it into the VS Mods folder, and relaunches the client.
 
 $ErrorActionPreference = 'Stop'
 
-$ProjectName = 'VintageStorySurroundSound'
+$ProjectName = 'VintageStorySurroundWeather'
 $ProjectRoot = $PSScriptRoot
-$ProjectFile = Join-Path $ProjectRoot 'VintageStorySurroundSound.csproj'
+$ProjectFile = Join-Path $ProjectRoot 'VintageStorySurroundWeather.csproj'
 $ModsDir = 'C:\Users\chris\AppData\Roaming\VintagestoryData\Mods'
 $VSProcessName = 'Vintagestory'
 $VSExePath = 'C:\Users\chris\AppData\Roaming\Vintagestory\Vintagestory.exe'
 $SourceDir = Join-Path $ProjectRoot "bin\Debug\ModPackage\$ProjectName"
-$TempDir = Join-Path $env:TEMP 'VintageStorySurroundSoundTempDeploy'
+$TempDir = Join-Path $env:TEMP 'VintageStorySurroundWeatherTempDeploy'
 
 Write-Host 'Checking for running Vintage Story process...' -ForegroundColor Cyan
 $vsProcess = Get-Process -Name $VSProcessName -ErrorAction SilentlyContinue
@@ -30,7 +30,7 @@ if ($LASTEXITCODE -ne 0) {
     throw 'dotnet clean failed.'
 }
 
-Write-Host 'Building VintageStorySurroundSound...' -ForegroundColor Cyan
+Write-Host 'Building VintageStorySurroundWeather...' -ForegroundColor Cyan
 dotnet build $ProjectFile
 if ($LASTEXITCODE -ne 0) {
     throw 'dotnet build failed.'
@@ -49,7 +49,7 @@ if (Test-Path $ModInfoPath) {
 
 $ModId = $modInfo.modid
 if ([string]::IsNullOrWhiteSpace($ModId)) {
-    $ModId = 'vintagestorysurroundsound'
+    $ModId = 'surroundweather'
 }
 
 $ZipFileName = "${ModId}_$Version.zip"

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Vintagestory.API.Client;
 using Vintagestory.API.MathTools;
 
-namespace SurroundSoundLab;
+namespace SurroundWeather;
 
 internal sealed class RainEmitterDebugRenderer : IRenderer
 {
@@ -21,7 +21,7 @@ internal sealed class RainEmitterDebugRenderer : IRenderer
 
     public void OnRenderFrame(float deltaTime, EnumRenderStage stage)
     {
-        if (!SurroundSoundLabConfigManager.Current.EnableDebugTools || !SurroundSoundLabConfigManager.Current.EffectiveShowRainEmitterDebugVisuals || stage != EnumRenderStage.Opaque)
+        if (!SurroundWeatherConfigManager.Current.EnableDebugTools || !SurroundWeatherConfigManager.Current.ShowRainEmitterDebugVisuals || stage != EnumRenderStage.Opaque)
         {
             return;
         }

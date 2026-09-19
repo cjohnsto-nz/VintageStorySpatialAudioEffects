@@ -1,16 +1,16 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-[assembly: AssemblyTitle("Surround Sound")]
-[assembly: AssemblyDescription("Configurable surround-sound output for Vintage Story, with optional debug tooling.")]
+[assembly: AssemblyTitle("Surround Weather")]
+[assembly: AssemblyDescription("Surround weather beds and emitters for Vintage Story.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("chrisunfocused")]
-[assembly: AssemblyProduct("Surround Sound")]
+[assembly: AssemblyProduct("Surround Weather")]
 [assembly: AssemblyCopyright("Copyright 2026")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: ComVisible(false)]
-[assembly: Guid("f8185277-0fbe-4b53-bf89-2dcb8e9246fb")]
-[assembly: AssemblyVersion("2.0.0.0")]
-[assembly: AssemblyFileVersion("2.0.0.0")]
-[assembly: AssemblyInformationalVersion("2.0.0-dev.1")]
+[assembly: Guid("3c0f2a6e-5d7b-4e61-9a2f-8b4d6c1e7a90")]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyInformationalVersion("1.0.0")]

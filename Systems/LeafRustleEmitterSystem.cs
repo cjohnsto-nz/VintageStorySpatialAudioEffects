@@ -6,7 +6,7 @@ using Vintagestory.API.Common.Entities;
 using Vintagestory.API.Config;
 using Vintagestory.API.MathTools;
 
-namespace SurroundSoundLab;
+namespace SurroundWeather;
 
 internal sealed class LeafRustleEmitterSystem : IDisposable
 {
@@ -150,7 +150,7 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
 
     private void OnGameTick(float deltaTime)
     {
-        if (!SurroundSoundLabConfigManager.Current.EffectiveEnableExperimentalLeafRustleEmitters)
+        if (!SurroundWeatherConfigManager.Current.EnableLeafRustleEmitters)
         {
             return;
         }
@@ -585,7 +585,7 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
 
         AssetLocation sound = ChooseRustleAlias(windExposure);
         float baseVolume = GameMath.Clamp(0.036f + (windExposure * 0.048f) + (leafFactor * 0.022f), 0.036f, 0.15f);
-        float volumeMultiplier = GameMath.Max(0f, SurroundSoundLabConfigManager.Current.LeafRustleVolumeMultiplier);
+        float volumeMultiplier = GameMath.Max(0f, SurroundWeatherConfigManager.Current.LeafRustleVolumeMultiplier);
         float volume = GameMath.Clamp(baseVolume * volumeMultiplier, 0.036f, 0.24f);
         volume *= (1f - roomLoss);
         if (volume <= 0.003f)
@@ -593,7 +593,7 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
             return false;
         }
 
-        float pitchVariationMultiplier = GameMath.Max(0f, SurroundSoundLabConfigManager.Current.LeafRustlePitchVariationMultiplier);
+        float pitchVariationMultiplier = GameMath.Max(0f, SurroundWeatherConfigManager.Current.LeafRustlePitchVariationMultiplier);
         float centeredRandom = ((float)random.NextDouble() * 2f) - 1f;
         float pitch = isReedLike
             ? GameMath.Clamp(0.67f + (centeredRandom * 0.17f * pitchVariationMultiplier) + ((windExposure - 0.5f) * 0.07f), 0.4f, 0.98f)
@@ -922,7 +922,7 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
 
     private void RegisterDebugEmitter(double x, double y, double z, LeafRustleEmitterRing ring, long nowMs, float volume)
     {
-        if (!SurroundSoundLabConfigManager.Current.EffectiveShowLeafRustleDebugVisuals)
+        if (!SurroundWeatherConfigManager.Current.ShowLeafRustleDebugVisuals)
         {
             return;
         }

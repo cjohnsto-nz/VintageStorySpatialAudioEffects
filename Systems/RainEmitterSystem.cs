@@ -6,7 +6,7 @@ using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
 using Vintagestory.API.MathTools;
 
-namespace SurroundSoundLab;
+namespace SurroundWeather;
 
 internal sealed class RainEmitterSystem : IDisposable
 {
@@ -126,7 +126,7 @@ internal sealed class RainEmitterSystem : IDisposable
 
     private void OnGameTick(float deltaTime)
     {
-        if (!SurroundSoundLabConfigManager.Current.EffectiveEnableExperimentalRainEmitters)
+        if (!SurroundWeatherConfigManager.Current.EnableRainEmitters)
         {
             return;
         }
@@ -317,7 +317,7 @@ internal sealed class RainEmitterSystem : IDisposable
         capi.World.PlaySoundAt(alias, candidate.X, candidate.Y, candidate.Z, null, EnumSoundType.Ambient, pitch, PlaybackRange, adjustedVolume);
         activeEmitters[slotIndex] = new ActiveRainEmitterState(nowMs + EmitterLifetimeMs, candidate.X, candidate.Y, candidate.Z, quadrant);
 
-        if (SurroundSoundLabConfigManager.Current.EnableDebugTools && SurroundSoundLabConfigManager.Current.EffectiveShowRainEmitterDebugVisuals)
+        if (SurroundWeatherConfigManager.Current.EnableDebugTools && SurroundWeatherConfigManager.Current.ShowRainEmitterDebugVisuals)
         {
             lock (visualsLock)
             {

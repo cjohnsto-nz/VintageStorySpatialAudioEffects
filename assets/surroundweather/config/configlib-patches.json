@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "file": "surroundweather.json",
+  "patches": {},
+  "settings": [
+    {
+      "type": "separator",
+      "title": "Weather beds"
+    },
+    {
+      "code": "ReplaceVanillaWeatherBeds",
+      "type": "boolean",
+      "default": true,
+      "clientSide": true,
+      "ingui": "Replace vanilla weather beds",
+      "comment": "Swap the vanilla weather tracks (rain, wind, hail, rumble, distant thunder) for 5.1 surround recordings."
+    },
+    {
+      "type": "separator",
+      "title": "Leaf Rustle"
+    },
+    {
+      "code": "EnableLeafRustleEmitters",
+      "type": "boolean",
+      "default": true,
+      "clientSide": true,
+      "ingui": "Enable leaf rustle emitters",
+      "comment": "Rustling leaves from the trees around you in the wind."
+    },
+    {
+      "code": "LeafRustleVolumeMultiplier",
+      "type": "float",
+      "default": 1.75,
+      "clientSide": true,
+      "ingui": "Leaf rustle volume multiplier",
+      "comment": "Scale foliage rustle emitter volume.",
+      "range": {
+        "min": 0.0,
+        "max": 5.0,
+        "step": 0.05
+      }
+    },
+    {
+      "code": "LeafRustlePitchVariationMultiplier",
+      "type": "float",
+      "default": 1.5,
+      "clientSide": true,
+      "ingui": "Leaf rustle pitch variation",
+      "comment": "Scale foliage rustle pitch variation.",
+      "range": {
+        "min": 0.0,
+        "max": 5.0,
+        "step": 0.05
+      }
+    },
+    {
+      "type": "separator",
+      "title": "Rain Emitters"
+    },
+    {
+      "code": "EnableRainEmitters",
+      "type": "boolean",
+      "default": true,
+      "clientSide": true,
+      "ingui": "Enable rain emitters",
+      "comment": "Rain landing on the ground around you, from where it lands."
+    },
+    {
+      "type": "separator",
+      "title": "Debug"
+    },
+    {
+      "code": "EnableDebugTools",
+      "type": "boolean",
+      "default": false,
+      "clientSide": true,
+      "ingui": "Enable debug tools",
+      "comment": "Enable the rain emitter debug renderer."
+    },
+    {
+      "code": "ShowLeafRustleDebugVisuals",
+      "type": "boolean",
+      "default": false,
+      "clientSide": true,
+      "ingui": "Show leaf rustle debug visuals",
+      "comment": "Render leaf rustle emitter debug visuals when debug tools are enabled."
+    },
+    {
+      "code": "ShowRainEmitterDebugVisuals",
+      "type": "boolean",
+      "default": false,
+      "clientSide": true,
+      "ingui": "Show rain emitter debug visuals",
+      "comment": "Render rain emitter debug visuals when debug tools are enabled."
+    }
+  ]
+}
