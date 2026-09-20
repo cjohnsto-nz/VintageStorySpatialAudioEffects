@@ -51,9 +51,6 @@ internal sealed class RainWindowField : EmitterField
 
     protected override int MaxCount(float intensity) => Math.Max(1, Config.RainWindowMaxCount);
 
-    /// <summary>Under investigation: say in the log how many panes are sounding, and where.</summary>
-    protected override bool LogState => true;
-
     /// <summary>Every window is its own pane, near or far.</summary>
     protected override float RingGain(int level) => 1f;
 

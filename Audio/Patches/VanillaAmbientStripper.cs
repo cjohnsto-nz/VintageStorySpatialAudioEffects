@@ -25,8 +25,6 @@ namespace SpatialAudioEffects;
 /// </summary>
 internal static class VanillaAmbientStripper
 {
-    private const long LogEveryMs = 5000;
-
     /// <summary>The sounds a field has taken over, and what says that field is running.</summary>
     private static readonly (string Path, System.Func<SpatialAudioEffectsConfig, bool> Replaced)[] TakenOver =
     {
@@ -38,7 +36,7 @@ internal static class VanillaAmbientStripper
     };
 
     private static ILogger log;
-    private static long lastLogMs;
+    private static bool said;
 
     internal static void TryPatch(Harmony harmony, ILogger logger)
     {
@@ -77,11 +75,11 @@ internal static class VanillaAmbientStripper
             stripped++;
         }
 
-        // Worth knowing in the log: it says whether what is heard now is vanilla's or a field's.
-        long nowMs = Environment.TickCount64;
-        if (stripped > 0 && nowMs - lastLogMs > LogEveryMs)
+        // Said once, the first time it happens: enough to tell a silent field from a stolen
+        // sound when someone reports one, and not a line a second for the rest of the session.
+        if (stripped > 0 && !said)
         {
-            lastLogMs = nowMs;
+            said = true;
             log?.Notification(
                 "Ambient scan: took out {0} vanilla sound(s) over {1} block(s); the emitter fields have them.",
                 stripped, blocks);

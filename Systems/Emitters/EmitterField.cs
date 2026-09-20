@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
@@ -66,7 +65,6 @@ internal abstract class EmitterField : IDisposable
     private bool hasLastPosition;
     private bool hasCells;
     private long lastCellRefreshMs;
-    private long lastStateLogMs;
     private float crowdShare = 1f;
     private double velocityX;
     private double velocityZ;
@@ -139,9 +137,6 @@ internal abstract class EmitterField : IDisposable
     /// so a pond is still quieter than a lake.
     /// </summary>
     protected virtual int LoudnessReference => 0;
-
-    /// <summary>Write what this field is doing to the log every few seconds, to track a fault down.</summary>
-    protected virtual bool LogState => false;
 
     /// <summary>Leave cells with more than BlockedLimit solid blocks in the way empty.</summary>
     protected virtual bool CullOccluded => true;
@@ -312,20 +307,6 @@ internal abstract class EmitterField : IDisposable
 
         // Empty cells fill nearest first; then cells whose slice has run its life take the next
         // one, crossfading in place. A few per step, so nothing starts in step.
-        if (LogState && nowMs - lastStateLogMs > 5000)
-        {
-            lastStateLogMs = nowMs;
-            var where = new List<string>();
-            foreach (EmitterVisual visual in GetSnapshot())
-            {
-                where.Add(string.Format(
-                    CultureInfo.InvariantCulture, "({0:0.0},{1:0.0},{2:0.0}){3}",
-                    visual.Position.X, visual.Position.Y, visual.Position.Z, visual.FadingOut ? " fading" : ""));
-            }
-
-            capi.Logger.Notification("[spatialaudioeffects] {0} | {1}", Describe(), string.Join(" ", where));
-        }
-
         int spawned = 0;
         foreach (EmitterCell cell in cells)
         {
