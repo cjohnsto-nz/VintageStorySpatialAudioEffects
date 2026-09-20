@@ -13,9 +13,9 @@ namespace SpatialAudioEffects;
 /// Spatial audio effects: vanilla's weather tracks replaced by 5.1 recordings, plus rain and leaf
 /// emitters placed around the player.
 /// <para>
-/// Works with vanilla OpenAL (the beds go straight to the speakers) and with the Steam Audio mod,
+/// Works with vanilla OpenAL (the beds go straight to the speakers) and with the Spatial Audio mod,
 /// which plays 5.1 beds from their speakers itself. It patches only vanilla's OpenAL classes
-/// (inert while Steam Audio has the audio), never the calls Steam Audio takes over.
+/// (inert while Spatial Audio has the audio), never the calls Spatial Audio takes over.
 /// </para>
 /// </summary>
 public sealed class SpatialAudioEffectsModSystem : ModSystem

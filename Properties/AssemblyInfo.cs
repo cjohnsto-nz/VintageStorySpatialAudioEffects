@@ -2,7 +2,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 
 [assembly: AssemblyTitle("Spatial Audio Effects")]
-[assembly: AssemblyDescription("Spatial audio effects beds and emitters for Vintage Story.")]
+[assembly: AssemblyDescription("Ambient sound from where it is made: weather beds and emitter fields for Vintage Story.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("chrisunfocused")]
 [assembly: AssemblyProduct("Spatial Audio Effects")]

@@ -6,7 +6,7 @@ using Vintagestory.Client.NoObf;
 namespace SpatialAudioEffects;
 
 /// <summary>
-/// Vanilla OpenAL only: plays the spatial audio effects beds straight to the speakers. With the Steam
+/// Vanilla OpenAL only: plays this mod's weather beds straight to the speakers. With the Spatial
 /// Audio mod in charge, OpenAL is closed and this never runs; that engine plays beds from their
 /// speakers itself.
 /// </summary>

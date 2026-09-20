@@ -10,7 +10,7 @@ follows you around the room; a river slides along beside you as you walk its ban
 This mod replaces those with **emitter fields**: a grid of short, positioned sounds on the surfaces
 and blocks that actually make them, so a spatial audio engine has real positions to work with. It
 works with vanilla audio, and is built to sit under the
-[Steam Audio mod](https://github.com/cjohnsto-nz/VintageStorySteamAudio), which muffles and reflects
+[Spatial Audio mod](https://github.com/cjohnsto-nz/VintageStorySpatialAudio), which muffles and reflects
 what the fields place.
 
 ## What it does
