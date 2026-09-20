@@ -31,14 +31,10 @@ internal sealed class RainSurfaceEmitterSystem : IDisposable
     /// <summary>Vanilla's range for a weather track: the engine hears it fully within a few metres, then 1/r.</summary>
     private const float Range = 16f;
     private const float BaseVolume = 0.55f;
-
-    private static readonly AssetLocation[] RainAliases =
-    {
-        CustomSoundRegistry.RainOneAlias,
-        CustomSoundRegistry.RainTwoAlias,
-        CustomSoundRegistry.RainThreeAlias,
-        CustomSoundRegistry.RainFourAlias
-    };
+    /// <summary>Emitters swapped per tick when the rain changes character, so the set turns over gradually.</summary>
+    private const int MaxSetChangesPerTick = 2;
+    private const float MediumRainFrom = 0.35f;
+    private const float HeavyRainFrom = 0.7f;
 
     private readonly ICoreClientAPI capi;
     private readonly Random random = new();
@@ -132,15 +128,27 @@ internal sealed class RainSurfaceEmitterSystem : IDisposable
         float volume = GameMath.Clamp(BaseVolume * intensity * Math.Max(0f, config.RainSurfaceEmitterVolume), 0.01f, 1f);
         int wanted = (int)Math.Round(Math.Max(2, config.RainSurfaceEmitterCount) * (0.45f + (0.55f * intensity)));
 
+        RainSampleSet wantedSet = SetForIntensity(intensity);
         CullOutOfRange(player.Pos, config, nowMs);
         lock (snapshotLock)
         {
+            int changed = 0;
             for (int i = emitters.Count - 1; i >= 0; i--)
             {
                 Emitter emitter = emitters[i];
                 if (emitter.Sound.IsDisposed)
                 {
                     emitters.RemoveAt(i);
+                    continue;
+                }
+
+                // The rain has picked up or eased off: let a couple of emitters at a time take on
+                // its new character. A canopy keeps its own patter whatever the weather does.
+                if (emitter.Set != RainSampleSet.Canopy && emitter.Set != wantedSet && changed < MaxSetChangesPerTick)
+                {
+                    BeginFade(emitter, nowMs, FadeSeconds);
+                    emitters.RemoveAt(i);
+                    changed++;
                     continue;
                 }
 
@@ -161,14 +169,14 @@ internal sealed class RainSurfaceEmitterSystem : IDisposable
         int missing = wanted - ActiveCount;
         for (int i = 0; i < missing; i++)
         {
-            if (!TryPlace(player.Pos, volume, config))
+            if (!TryPlace(player.Pos, volume, wantedSet, config))
             {
                 break;  // nowhere left that rain reaches: try again next tick
             }
         }
     }
 
-    private bool TryPlace(EntityPos playerPos, float volume, SurroundWeatherConfig config)
+    private bool TryPlace(EntityPos playerPos, float volume, RainSampleSet wantedSet, SurroundWeatherConfig config)
     {
         IBlockAccessor blocks = capi.World?.BlockAccessor;
         if (blocks == null)
@@ -207,29 +215,28 @@ internal sealed class RainSurfaceEmitterSystem : IDisposable
             }
 
             Block surface = blocks.GetBlock(new BlockPos(x, surfaceY, z, playerPos.Dimension));
-            return Play(ex, ey, ez, surface, volume);
+            // What the rain lands on picks the sound as much as how hard it falls.
+            RainSampleSet set = surface?.BlockMaterial == EnumBlockMaterial.Leaves ? RainSampleSet.Canopy : wantedSet;
+            return Play(ex, ey, ez, surface, set, volume);
         }
 
         return false;
     }
 
-    private bool Play(double x, double y, double z, Block surface, float volume)
+    private bool Play(double x, double y, double z, Block surface, RainSampleSet set, float volume)
     {
-        // Rain on water is brighter, on leaves softer; otherwise a little random spread keeps the
-        // emitters from ringing as one voice.
+        // Rain on water is brighter; otherwise a little random spread keeps the emitters from
+        // ringing as one voice. The canopy set is already rain in leaves, so it is left alone.
         float pitch = 0.94f + ((float)random.NextDouble() * 0.12f);
         if (surface?.BlockMaterial == EnumBlockMaterial.Water)
         {
             pitch += 0.06f;
         }
-        else if (surface?.BlockMaterial == EnumBlockMaterial.Leaves)
-        {
-            pitch -= 0.05f;
-        }
 
+        AssetLocation[] samples = SamplesFor(set);
         ILoadedSound sound = capi.World.LoadSound(new SoundParams
         {
-            Location = RainAliases[random.Next(RainAliases.Length)],
+            Location = samples[random.Next(samples.Length)],
             Position = new Vec3f((float)x, (float)y, (float)z),
             RelativePosition = false,
             Range = Range,
@@ -250,11 +257,25 @@ internal sealed class RainSurfaceEmitterSystem : IDisposable
         sound.FadeTo(volume, FadeSeconds, _ => { });
         lock (snapshotLock)
         {
-            emitters.Add(new Emitter(sound, x, y, z) { Volume = volume });
+            emitters.Add(new Emitter(sound, x, y, z) { Volume = volume, Set = set });
         }
 
         return true;
     }
+
+    /// <summary>A light shower, a steady rain or a downpour: the weather picks the set.</summary>
+    private static RainSampleSet SetForIntensity(float intensity) =>
+        intensity < MediumRainFrom ? RainSampleSet.Light
+        : intensity < HeavyRainFrom ? RainSampleSet.Medium
+        : RainSampleSet.Heavy;
+
+    private static AssetLocation[] SamplesFor(RainSampleSet set) => set switch
+    {
+        RainSampleSet.Light => CustomSoundRegistry.RainLightLoops,
+        RainSampleSet.Heavy => CustomSoundRegistry.RainHeavyLoops,
+        RainSampleSet.Canopy => CustomSoundRegistry.RainCanopyLoops,
+        _ => CustomSoundRegistry.RainMediumLoops,
+    };
 
     private void CullOutOfRange(EntityPos playerPos, SurroundWeatherConfig config, long nowMs)
     {
@@ -359,8 +380,19 @@ internal sealed class RainSurfaceEmitterSystem : IDisposable
 
         public float Volume { get; set; }
 
+        public RainSampleSet Set { get; set; }
+
         public long DisposeAtMs { get; set; }
     }
+}
+
+/// <summary>Which recording an emitter plays: the character of the rain, or what it lands on.</summary>
+internal enum RainSampleSet
+{
+    Light,
+    Medium,
+    Heavy,
+    Canopy
 }
 
 internal readonly record struct RainSurfaceEmitterVisual(Vec3d Position, float Volume, bool FadingOut);

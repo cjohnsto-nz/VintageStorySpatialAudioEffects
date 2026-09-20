@@ -100,6 +100,66 @@
       <Pack>true</Pack>
       <PackagePath>assets\surroundweather\sounds\weather\lightning-distant.ogg</PackagePath>
     </Content>
+    <Content Include="Audio\Assets\rain-light-1.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\rain-light-1.ogg</PackagePath>
+    </Content>
+    <Content Include="Audio\Assets\rain-light-2.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\rain-light-2.ogg</PackagePath>
+    </Content>
+    <Content Include="Audio\Assets\rain-light-3.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\rain-light-3.ogg</PackagePath>
+    </Content>
+    <Content Include="Audio\Assets\rain-medium-1.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\rain-medium-1.ogg</PackagePath>
+    </Content>
+    <Content Include="Audio\Assets\rain-medium-2.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\rain-medium-2.ogg</PackagePath>
+    </Content>
+    <Content Include="Audio\Assets\rain-medium-3.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\rain-medium-3.ogg</PackagePath>
+    </Content>
+    <Content Include="Audio\Assets\rain-heavy-1.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\rain-heavy-1.ogg</PackagePath>
+    </Content>
+    <Content Include="Audio\Assets\rain-heavy-2.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\rain-heavy-2.ogg</PackagePath>
+    </Content>
+    <Content Include="Audio\Assets\rain-heavy-3.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\rain-heavy-3.ogg</PackagePath>
+    </Content>
+    <Content Include="Audio\Assets\rain-canopy-1.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\rain-canopy-1.ogg</PackagePath>
+    </Content>
+    <Content Include="Audio\Assets\rain-canopy-2.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\rain-canopy-2.ogg</PackagePath>
+    </Content>
+    <Content Include="Audio\Assets\rain-canopy-3.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\rain-canopy-3.ogg</PackagePath>
+    </Content>
     <Content Include="Audio\Assets\silence.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>

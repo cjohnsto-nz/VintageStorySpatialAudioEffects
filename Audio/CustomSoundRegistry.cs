@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.Client;
@@ -15,17 +17,37 @@ internal static class CustomSoundRegistry
     public static readonly AssetLocation RainThreeAlias = new("surroundweather:sounds/weather/rain-mono-3.ogg");
     public static readonly AssetLocation RainFourAlias = new("surroundweather:sounds/weather/rain-mono-4.ogg");
 
+    /// <summary>
+    /// The surface emitters' loops, cut from the 5.1 beds by tools/Build-EmitterSamples.ps1: one
+    /// set per character of rain, all at the same level, so the weather and the surface pick a set
+    /// and the mod sets the loudness.
+    /// </summary>
+    public static readonly AssetLocation[] RainLightLoops = Loops("rain-light-1", "rain-light-2", "rain-light-3");
+
+    public static readonly AssetLocation[] RainMediumLoops = Loops("rain-medium-1", "rain-medium-2", "rain-medium-3");
+
+    public static readonly AssetLocation[] RainHeavyLoops = Loops("rain-heavy-1", "rain-heavy-2", "rain-heavy-3");
+
+    /// <summary>Rain in the leaves, for emitters that land on a canopy.</summary>
+    public static readonly AssetLocation[] RainCanopyLoops = Loops("rain-canopy-1", "rain-canopy-2", "rain-canopy-3");
+
     private static readonly AssetLocation[] Aliases =
-    {
-        LeafRustleOneAlias,
-        LeafRustleTwoAlias,
-        LeafRustleThreeAlias,
-        LeafRustleFourAlias,
-        RainOneAlias,
-        RainTwoAlias,
-        RainThreeAlias,
-        RainFourAlias
-    };
+        new[]
+        {
+            LeafRustleOneAlias,
+            LeafRustleTwoAlias,
+            LeafRustleThreeAlias,
+            LeafRustleFourAlias,
+            RainOneAlias,
+            RainTwoAlias,
+            RainThreeAlias,
+            RainFourAlias,
+        }
+        .Concat(RainLightLoops)
+        .Concat(RainMediumLoops)
+        .Concat(RainHeavyLoops)
+        .Concat(RainCanopyLoops)
+        .ToArray();
 
     public static void Register(ICoreClientAPI api, ILogger logger)
     {
@@ -41,4 +63,7 @@ internal static class CustomSoundRegistry
             ScreenManager.soundAudioData[alias] = ScreenManager.LoadSound(asset);
         }
     }
+
+    private static AssetLocation[] Loops(params string[] names) =>
+        names.Select(name => new AssetLocation($"surroundweather:sounds/weather/{name}.ogg")).ToArray();
 }
