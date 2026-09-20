@@ -7,7 +7,7 @@ using Vintagestory.API.Common.Entities;
 using Vintagestory.API.MathTools;
 using Vintagestory.Client.NoObf;
 
-namespace SurroundWeather;
+namespace SpatialAudioEffects;
 
 /// <summary>
 /// Puts a block's ambient sound (rain on windows, a beehive, a translocator) on the block that
@@ -40,7 +40,7 @@ internal static class AmbientSoundPlacementPatch
         ICoreClientAPI api = capi;
         IBlockAccessor blocks = api?.World?.BlockAccessor;
         if (blocks == null || position == null || __instance?.Sound == null || __instance.AssetLoc == null
-            || !SurroundWeatherConfigManager.Current.PlaceAmbientSoundsOnTheirBlocks)
+            || !SpatialAudioEffectsConfigManager.Current.PlaceAmbientSoundsOnTheirBlocks)
         {
             return true;  // vanilla's bounding box
         }

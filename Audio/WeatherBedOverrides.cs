@@ -4,7 +4,7 @@ using Vintagestory.API.Common;
 using Vintagestory.Client;
 using Vintagestory.Client.NoObf;
 
-namespace SurroundWeather;
+namespace SpatialAudioEffects;
 
 /// <summary>
 /// Swaps the audio behind vanilla's weather tracks: the 5.1 surround recordings, and silence for
@@ -17,7 +17,7 @@ namespace SurroundWeather;
 /// </remarks>
 internal static class WeatherBedOverrides
 {
-    private static readonly AssetLocation Silence = new("surroundweather:sounds/weather/silence.ogg");
+    private static readonly AssetLocation Silence = new("spatialaudioeffects:sounds/weather/silence.ogg");
 
     /// <summary>Vanilla's rain beds, which the surface emitters replace.</summary>
     private static readonly AssetLocation[] RainBeds =
@@ -36,13 +36,13 @@ internal static class WeatherBedOverrides
 
     private static readonly (AssetLocation Target, AssetLocation Replacement)[] SurroundReplacements =
     {
-        (new AssetLocation("game:sounds/weather/tracks/rain-leafless.ogg"), new AssetLocation("surroundweather:sounds/weather/tracks/rain-surround-new.ogg")),
-        (new AssetLocation("game:sounds/weather/tracks/rain-leafy.ogg"), new AssetLocation("surroundweather:sounds/weather/tracks/rain-surround-quiet.ogg")),
-        (new AssetLocation("game:sounds/weather/wind-leafless.ogg"), new AssetLocation("surroundweather:sounds/weather/wind-surround-leafy2.ogg")),
-        (new AssetLocation("game:sounds/weather/wind-leafy.ogg"), new AssetLocation("surroundweather:sounds/weather/wind-surround-leafless2.ogg")),
-        (new AssetLocation("game:sounds/weather/lowgrumble.ogg"), new AssetLocation("surroundweather:sounds/weather/rumble-low.ogg")),
-        (new AssetLocation("game:sounds/weather/lightning-distant.ogg"), new AssetLocation("surroundweather:sounds/weather/lightning-distant.ogg")),
-        (new AssetLocation("game:sounds/weather/tracks/hail.ogg"), new AssetLocation("surroundweather:sounds/weather/hail.wav"))
+        (new AssetLocation("game:sounds/weather/tracks/rain-leafless.ogg"), new AssetLocation("spatialaudioeffects:sounds/weather/tracks/rain-surround-new.ogg")),
+        (new AssetLocation("game:sounds/weather/tracks/rain-leafy.ogg"), new AssetLocation("spatialaudioeffects:sounds/weather/tracks/rain-surround-quiet.ogg")),
+        (new AssetLocation("game:sounds/weather/wind-leafless.ogg"), new AssetLocation("spatialaudioeffects:sounds/weather/wind-surround-leafy2.ogg")),
+        (new AssetLocation("game:sounds/weather/wind-leafy.ogg"), new AssetLocation("spatialaudioeffects:sounds/weather/wind-surround-leafless2.ogg")),
+        (new AssetLocation("game:sounds/weather/lowgrumble.ogg"), new AssetLocation("spatialaudioeffects:sounds/weather/rumble-low.ogg")),
+        (new AssetLocation("game:sounds/weather/lightning-distant.ogg"), new AssetLocation("spatialaudioeffects:sounds/weather/lightning-distant.ogg")),
+        (new AssetLocation("game:sounds/weather/tracks/hail.ogg"), new AssetLocation("spatialaudioeffects:sounds/weather/hail.wav"))
     };
 
     private static readonly Dictionary<AssetLocation, AudioData> OriginalAudioDataByTarget = new();

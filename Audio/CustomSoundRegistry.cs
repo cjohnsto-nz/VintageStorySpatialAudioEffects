@@ -4,18 +4,18 @@ using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.Client;
 
-namespace SurroundWeather;
+namespace SpatialAudioEffects;
 
 internal static class CustomSoundRegistry
 {
-    public static readonly AssetLocation LeafRustleOneAlias = new("surroundweather:sounds/foliage/leaves-mono-1.ogg");
-    public static readonly AssetLocation LeafRustleTwoAlias = new("surroundweather:sounds/foliage/leaves-mono-2.ogg");
-    public static readonly AssetLocation LeafRustleThreeAlias = new("surroundweather:sounds/foliage/leaves-mono-3.ogg");
-    public static readonly AssetLocation LeafRustleFourAlias = new("surroundweather:sounds/foliage/leaves-mono-4.ogg");
-    public static readonly AssetLocation RainOneAlias = new("surroundweather:sounds/weather/rain-mono-1.ogg");
-    public static readonly AssetLocation RainTwoAlias = new("surroundweather:sounds/weather/rain-mono-2.ogg");
-    public static readonly AssetLocation RainThreeAlias = new("surroundweather:sounds/weather/rain-mono-3.ogg");
-    public static readonly AssetLocation RainFourAlias = new("surroundweather:sounds/weather/rain-mono-4.ogg");
+    public static readonly AssetLocation LeafRustleOneAlias = new("spatialaudioeffects:sounds/foliage/leaves-mono-1.ogg");
+    public static readonly AssetLocation LeafRustleTwoAlias = new("spatialaudioeffects:sounds/foliage/leaves-mono-2.ogg");
+    public static readonly AssetLocation LeafRustleThreeAlias = new("spatialaudioeffects:sounds/foliage/leaves-mono-3.ogg");
+    public static readonly AssetLocation LeafRustleFourAlias = new("spatialaudioeffects:sounds/foliage/leaves-mono-4.ogg");
+    public static readonly AssetLocation RainOneAlias = new("spatialaudioeffects:sounds/weather/rain-mono-1.ogg");
+    public static readonly AssetLocation RainTwoAlias = new("spatialaudioeffects:sounds/weather/rain-mono-2.ogg");
+    public static readonly AssetLocation RainThreeAlias = new("spatialaudioeffects:sounds/weather/rain-mono-3.ogg");
+    public static readonly AssetLocation RainFourAlias = new("spatialaudioeffects:sounds/weather/rain-mono-4.ogg");
 
     /// <summary>
     /// The surface emitters' loops, cut from the 5.1 beds by tools/Build-EmitterSamples.ps1: one
@@ -79,5 +79,5 @@ internal static class CustomSoundRegistry
     }
 
     private static AssetLocation[] Loops(params string[] names) =>
-        names.Select(name => new AssetLocation($"surroundweather:sounds/weather/{name}.ogg")).ToArray();
+        names.Select(name => new AssetLocation($"spatialaudioeffects:sounds/weather/{name}.ogg")).ToArray();
 }

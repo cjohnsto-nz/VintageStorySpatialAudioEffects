@@ -2,7 +2,7 @@ using HarmonyLib;
 using OpenTK.Audio.OpenAL;
 using Vintagestory.Client;
 
-namespace SurroundWeather;
+namespace SpatialAudioEffects;
 
 [HarmonyPatch(typeof(AudioOpenAl), nameof(AudioOpenAl.GetSoundFormat))]
 internal static class AudioOpenAlGetSoundFormatPatch

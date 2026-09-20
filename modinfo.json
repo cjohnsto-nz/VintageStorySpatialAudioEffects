@@ -1,12 +1,12 @@
 {
   "type": "code",
-  "modid": "surroundweather",
-  "name": "Surround Weather",
+  "modid": "spatialaudioeffects",
+  "name": "Spatial Audio Effects",
   "authors": [
     "chrisunfocused"
   ],
   "version": "1.0.0",
-  "description": "Surround weather: 5.1 rain, wind, hail and thunder, with rain and rustling leaves placed around you. Works with vanilla audio and with the Steam Audio mod.",
+  "description": "Sound comes from where it is made. Rain, wind, water and rain on windows play from the surfaces and blocks that make them, on a grid of emitters around you, in place of the listener-relative beds and the single ambient sound vanilla gives a whole lake or wall of windows. Works with vanilla audio and with the Steam Audio mod.",
   "dependencies": {
     "game": "1.22.7"
   },

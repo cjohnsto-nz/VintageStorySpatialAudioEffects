@@ -1,11 +1,11 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-[assembly: AssemblyTitle("Surround Weather")]
-[assembly: AssemblyDescription("Surround weather beds and emitters for Vintage Story.")]
+[assembly: AssemblyTitle("Spatial Audio Effects")]
+[assembly: AssemblyDescription("Spatial audio effects beds and emitters for Vintage Story.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("chrisunfocused")]
-[assembly: AssemblyProduct("Surround Weather")]
+[assembly: AssemblyProduct("Spatial Audio Effects")]
 [assembly: AssemblyCopyright("Copyright 2026")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

@@ -3,10 +3,10 @@ using OpenTK.Audio.OpenAL;
 using Vintagestory.Client;
 using Vintagestory.Client.NoObf;
 
-namespace SurroundWeather;
+namespace SpatialAudioEffects;
 
 /// <summary>
-/// Vanilla OpenAL only: plays the surround weather beds straight to the speakers. With the Steam
+/// Vanilla OpenAL only: plays the spatial audio effects beds straight to the speakers. With the Steam
 /// Audio mod in charge, OpenAL is closed and this never runs; that engine plays beds from their
 /// speakers itself.
 /// </summary>

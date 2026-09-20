@@ -1,8 +1,8 @@
 using Vintagestory.API.Common;
 
-namespace SurroundWeather;
+namespace SpatialAudioEffects;
 
-public sealed class SurroundWeatherConfig
+public sealed class SpatialAudioEffectsConfig
 {
     /// <summary>Swap vanilla's weather tracks (rain, wind, hail, rumble, distant thunder) for 5.1 surround recordings.</summary>
     public bool ReplaceVanillaWeatherBeds { get; set; } = true;
@@ -125,23 +125,23 @@ public sealed class SurroundWeatherConfig
     public bool ShowFlowingWaterDebugVisuals { get; set; } = false;
 }
 
-internal static class SurroundWeatherConfigManager
+internal static class SpatialAudioEffectsConfigManager
 {
-    internal const string ConfigFileName = "surroundweather.json";
+    internal const string ConfigFileName = "spatialaudioeffects.json";
 
-    public static SurroundWeatherConfig Current { get; private set; } = new();
+    public static SpatialAudioEffectsConfig Current { get; private set; } = new();
 
     public static void Load(ICoreAPI api, ILogger logger)
     {
         try
         {
-            Current = api.LoadModConfig<SurroundWeatherConfig>(ConfigFileName) ?? new SurroundWeatherConfig();
+            Current = api.LoadModConfig<SpatialAudioEffectsConfig>(ConfigFileName) ?? new SpatialAudioEffectsConfig();
             api.StoreModConfig(Current, ConfigFileName);
         }
         catch (System.Exception ex)
         {
-            logger.Warning("[SurroundWeather] Failed to load config, using defaults: " + ex.Message);
-            Current = new SurroundWeatherConfig();
+            logger.Warning("[SpatialAudioEffects] Failed to load config, using defaults: " + ex.Message);
+            Current = new SpatialAudioEffectsConfig();
         }
     }
 }

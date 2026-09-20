@@ -3,7 +3,7 @@ using System.Reflection;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 
-namespace SurroundWeather;
+namespace SpatialAudioEffects;
 
 /// <summary>
 /// What the weather is doing, read from the game's client weather system. Reflection: the weather

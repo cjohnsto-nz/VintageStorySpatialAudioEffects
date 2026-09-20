@@ -5,7 +5,7 @@ using HarmonyLib;
 using Vintagestory.API.Common;
 using Vintagestory.Client.NoObf;
 
-namespace SurroundWeather;
+namespace SpatialAudioEffects;
 
 /// <summary>
 /// Takes the ambient sounds the emitter fields have replaced out of the scan that makes them.
@@ -28,7 +28,7 @@ internal static class VanillaAmbientStripper
     private const long LogEveryMs = 5000;
 
     /// <summary>The sounds a field has taken over, and what says that field is running.</summary>
-    private static readonly (string Path, System.Func<SurroundWeatherConfig, bool> Replaced)[] TakenOver =
+    private static readonly (string Path, System.Func<SpatialAudioEffectsConfig, bool> Replaced)[] TakenOver =
     {
         (RainWindowField.WindowSound, config => config.ExperimentalWindowRainEmitters),
         (WaterField.WaveSound, config => config.ExperimentalWaterWaveEmitters),
@@ -61,7 +61,7 @@ internal static class VanillaAmbientStripper
             return;
         }
 
-        SurroundWeatherConfig config = SurroundWeatherConfigManager.Current;
+        SpatialAudioEffectsConfig config = SpatialAudioEffectsConfigManager.Current;
         int stripped = 0;
         int blocks = 0;
         for (int i = newAmbientSounds.Count - 1; i >= 0; i--)
@@ -88,9 +88,9 @@ internal static class VanillaAmbientStripper
         }
     }
 
-    private static bool IsTakenOver(string path, SurroundWeatherConfig config)
+    private static bool IsTakenOver(string path, SpatialAudioEffectsConfig config)
     {
-        foreach ((string sound, System.Func<SurroundWeatherConfig, bool> replaced) in TakenOver)
+        foreach ((string sound, System.Func<SpatialAudioEffectsConfig, bool> replaced) in TakenOver)
         {
             if (path.Contains(sound, StringComparison.OrdinalIgnoreCase) && replaced(config))
             {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Vintagestory.API.Client;
 using Vintagestory.API.MathTools;
 
-namespace SurroundWeather;
+namespace SpatialAudioEffects;
 
 /// <summary>Draws a field's emitters: a column at each, as tall as it is loud, grey while it fades out.</summary>
 internal sealed class EmitterFieldDebugRenderer : IRenderer

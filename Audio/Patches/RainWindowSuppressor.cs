@@ -3,7 +3,7 @@ using System.Reflection;
 using HarmonyLib;
 using Vintagestory.API.Common;
 
-namespace SurroundWeather;
+namespace SpatialAudioEffects;
 
 /// <summary>
 /// Silences vanilla's one rain-on-glass ambient sound while the window emitters play instead.
@@ -34,7 +34,7 @@ internal static class RainWindowSuppressor
 
     public static void Postfix(ref float __result)
     {
-        if (SurroundWeatherConfigManager.Current.ExperimentalWindowRainEmitters)
+        if (SpatialAudioEffectsConfigManager.Current.ExperimentalWindowRainEmitters)
         {
             __result = 0f;  // the window emitters are the rain on the glass now
         }

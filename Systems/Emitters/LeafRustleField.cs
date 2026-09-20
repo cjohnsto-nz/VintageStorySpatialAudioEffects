@@ -5,7 +5,7 @@ using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
 using Vintagestory.API.MathTools;
 
-namespace SurroundWeather;
+namespace SpatialAudioEffects;
 
 /// <summary>Leaves and reeds rustling in the wind, from the foliage around the listener.</summary>
 internal sealed class LeafRustleField : EmitterField
@@ -26,7 +26,7 @@ internal sealed class LeafRustleField : EmitterField
 
     public override string Name => "leaf rustles";
 
-    private static SurroundWeatherConfig Config => SurroundWeatherConfigManager.Current;
+    private static SpatialAudioEffectsConfig Config => SpatialAudioEffectsConfigManager.Current;
 
     protected override double Radius => 24.0;
 

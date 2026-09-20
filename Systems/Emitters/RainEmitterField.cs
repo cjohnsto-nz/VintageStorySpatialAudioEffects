@@ -5,7 +5,7 @@ using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
 using Vintagestory.API.MathTools;
 
-namespace SurroundWeather;
+namespace SpatialAudioEffects;
 
 /// <summary>What a rain field plays.</summary>
 internal enum RainFieldProfile
@@ -64,7 +64,7 @@ internal sealed class RainEmitterField : EmitterField
         this.profile = profile;
     }
 
-    private static SurroundWeatherConfig Config => SurroundWeatherConfigManager.Current;
+    private static SpatialAudioEffectsConfig Config => SpatialAudioEffectsConfigManager.Current;
 
     public override string Name => Loops ? "rain on surfaces" : "rain splashes";
 

@@ -6,7 +6,7 @@ using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
 using Vintagestory.API.MathTools;
 
-namespace SurroundWeather;
+namespace SpatialAudioEffects;
 
 /// <summary>What a field puts in one grid cell.</summary>
 /// <param name="Key">The cell: one emitter per key.</param>
@@ -323,7 +323,7 @@ internal abstract class EmitterField : IDisposable
                     visual.Position.X, visual.Position.Y, visual.Position.Z, visual.FadingOut ? " fading" : ""));
             }
 
-            capi.Logger.Notification("[surroundweather] {0} | {1}", Describe(), string.Join(" ", where));
+            capi.Logger.Notification("[spatialaudioeffects] {0} | {1}", Describe(), string.Join(" ", where));
         }
 
         int spawned = 0;

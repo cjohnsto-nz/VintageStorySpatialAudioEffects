@@ -5,7 +5,7 @@ using Vintagestory.API.Common.Entities;
 using Vintagestory.API.Config;
 using Vintagestory.API.MathTools;
 
-namespace SurroundWeather;
+namespace SpatialAudioEffects;
 
 /// <summary>
 /// Experimental: wind from the open air around the listener, instead of a bed at their head.
@@ -41,7 +41,7 @@ internal sealed class WindEmitterField : EmitterField
 
     public override string Name => "wind";
 
-    private static SurroundWeatherConfig Config => SurroundWeatherConfigManager.Current;
+    private static SpatialAudioEffectsConfig Config => SpatialAudioEffectsConfigManager.Current;
 
     /// <summary>Wind is broad: fewer, wider cells than rain.</summary>
     protected override double NearSpacing => 5.0;

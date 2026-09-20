@@ -6,8 +6,8 @@
     <GamePath>C:\Program Files (x86)\Steam\steamapps\common\Vintage Story</GamePath>
     <GamePath Condition="Exists('C:\Users\$(USERNAME)\AppData\Roaming\Vintagestory')">C:\Users\$(USERNAME)\AppData\Roaming\Vintagestory</GamePath>
     <GamePath Condition="Exists('$(VINTAGE_STORY)')">$(VINTAGE_STORY)</GamePath>
-    <AssemblyName>VintageStorySurroundWeather</AssemblyName>
-    <RootNamespace>SurroundWeather</RootNamespace>
+    <AssemblyName>VintageStorySpatialAudioEffects</AssemblyName>
+    <RootNamespace>SpatialAudioEffects</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
@@ -35,221 +35,221 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="assets\surroundweather\config\configlib-patches.json">
+    <Content Include="assets\spatialaudioeffects\config\configlib-patches.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\config\configlib-patches.json</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\config\configlib-patches.json</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rain-surround-loud.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\tracks\rain-surround-loud.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\tracks\rain-surround-loud.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rain-surround-canopy.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\tracks\rain-surround-canopy.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\tracks\rain-surround-canopy.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rain-surround-new.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\tracks\rain-surround-new.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\tracks\rain-surround-new.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rain-surround-quiet.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\tracks\rain-surround-quiet.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\tracks\rain-surround-quiet.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rainwindow-1.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\rainwindow-1.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\rainwindow-1.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rainwindow-2.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\rainwindow-2.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\rainwindow-2.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rainwindow-3.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\rainwindow-3.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\rainwindow-3.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rain-mono-1.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\rain-mono-1.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\rain-mono-1.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rain-mono-2.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\rain-mono-2.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\rain-mono-2.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rain-mono-3.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\rain-mono-3.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\rain-mono-3.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rain-mono-4.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\rain-mono-4.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\rain-mono-4.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\wind-surround-leafless2.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\wind-surround-leafless2.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\wind-surround-leafless2.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\wind-surround-leafy2.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\wind-surround-leafy2.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\wind-surround-leafy2.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rumble-low.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\rumble-low.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\rumble-low.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\lightning-distant.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\lightning-distant.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\lightning-distant.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rain-light-1.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\rain-light-1.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\rain-light-1.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rain-light-2.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\rain-light-2.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\rain-light-2.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rain-light-3.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\rain-light-3.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\rain-light-3.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rain-medium-1.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\rain-medium-1.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\rain-medium-1.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rain-medium-2.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\rain-medium-2.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\rain-medium-2.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rain-medium-3.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\rain-medium-3.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\rain-medium-3.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rain-heavy-1.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\rain-heavy-1.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\rain-heavy-1.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rain-heavy-2.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\rain-heavy-2.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\rain-heavy-2.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rain-heavy-3.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\rain-heavy-3.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\rain-heavy-3.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rain-canopy-1.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\rain-canopy-1.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\rain-canopy-1.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rain-canopy-2.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\rain-canopy-2.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\rain-canopy-2.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\rain-canopy-3.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\rain-canopy-3.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\rain-canopy-3.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\wind-leafy-1.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\wind-leafy-1.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\wind-leafy-1.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\wind-leafy-2.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\wind-leafy-2.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\wind-leafy-2.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\wind-leafy-3.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\wind-leafy-3.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\wind-leafy-3.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\wind-leafy-4.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\wind-leafy-4.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\wind-leafy-4.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\wind-leafless-1.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\wind-leafless-1.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\wind-leafless-1.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\wind-leafless-2.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\wind-leafless-2.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\wind-leafless-2.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\wind-leafless-3.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\wind-leafless-3.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\wind-leafless-3.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\wind-leafless-4.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\wind-leafless-4.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\wind-leafless-4.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\silence.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\silence.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\silence.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\hail.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\weather\hail.wav</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\weather\hail.wav</PackagePath>
     </Content>
     <Content Include="Audio\Assets\leaves-mono-1.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\foliage\leaves-mono-1.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\foliage\leaves-mono-1.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\leaves-mono-2.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\foliage\leaves-mono-2.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\foliage\leaves-mono-2.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\leaves-mono-3.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\foliage\leaves-mono-3.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\foliage\leaves-mono-3.ogg</PackagePath>
     </Content>
     <Content Include="Audio\Assets\leaves-mono-4.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>
-      <PackagePath>assets\surroundweather\sounds\foliage\leaves-mono-4.ogg</PackagePath>
+      <PackagePath>assets\spatialaudioeffects\sounds\foliage\leaves-mono-4.ogg</PackagePath>
     </Content>
   </ItemGroup>
 
   <Target Name="PackageMod" AfterTargets="Build">
     <PropertyGroup>
-      <ModFolderName>VintageStorySurroundWeather</ModFolderName>
+      <ModFolderName>VintageStorySpatialAudioEffects</ModFolderName>
       <ModPackageDir>ModPackage\$(ModFolderName)\</ModPackageDir>
       <FullModPackagePath>$(OutputPath)\$(ModPackageDir)</FullModPackagePath>
     </PropertyGroup>

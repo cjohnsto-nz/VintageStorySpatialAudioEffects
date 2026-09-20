@@ -1,4 +1,4 @@
-namespace SurroundWeather;
+namespace SpatialAudioEffects;
 
 internal static class WeatherBedRoutingPolicy
 {
@@ -9,7 +9,7 @@ internal static class WeatherBedRoutingPolicy
             or "sounds/weather/tracks/hail.ogg" or "sounds/weather/tracks/lowtremble.ogg"
             or "sounds/weather/tracks/verylowtremble.ogg" or "sounds/weather/lowgrumble.ogg"
             or "sounds/weather/lightning-distant.ogg",
-        "surroundweather" => path is "sounds/weather/tracks/rain-surround-new.ogg"
+        "spatialaudioeffects" => path is "sounds/weather/tracks/rain-surround-new.ogg"
             or "sounds/weather/tracks/rain-surround-quiet.ogg" or "sounds/weather/tracks/rain-surround-loud.ogg"
             or "sounds/weather/tracks/rain-surround-canopy.ogg" or "sounds/weather/rumble-low.ogg"
             or "sounds/weather/lightning-distant.ogg" or "sounds/weather/hail.wav"

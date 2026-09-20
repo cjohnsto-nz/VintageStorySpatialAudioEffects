@@ -7,10 +7,10 @@ using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
 using Vintagestory.API.Datastructures;
 
-namespace SurroundWeather;
+namespace SpatialAudioEffects;
 
 /// <summary>
-/// Surround weather: vanilla's weather tracks replaced by 5.1 recordings, plus rain and leaf
+/// Spatial audio effects: vanilla's weather tracks replaced by 5.1 recordings, plus rain and leaf
 /// emitters placed around the player.
 /// <para>
 /// Works with vanilla OpenAL (the beds go straight to the speakers) and with the Steam Audio mod,
@@ -18,9 +18,9 @@ namespace SurroundWeather;
 /// (inert while Steam Audio has the audio), never the calls Steam Audio takes over.
 /// </para>
 /// </summary>
-public sealed class SurroundWeatherModSystem : ModSystem
+public sealed class SpatialAudioEffectsModSystem : ModSystem
 {
-    private const string ConfigLibConfigSavedEvent = "configlib:surroundweather:config-saved";
+    private const string ConfigLibConfigSavedEvent = "configlib:spatialaudioeffects:config-saved";
     private const string ConfigLibConfigReloadEvent = "configlib:config-reload";
 
     private ICoreAPI api;
@@ -34,7 +34,7 @@ public sealed class SurroundWeatherModSystem : ModSystem
     {
         base.Start(api);
         this.api = api;
-        SurroundWeatherConfigManager.Load(api, Mod.Logger);
+        SpatialAudioEffectsConfigManager.Load(api, Mod.Logger);
         api.Event.RegisterEventBusListener(OnConfigLibEvent, filterByEventName: ConfigLibConfigSavedEvent);
         api.Event.RegisterEventBusListener(OnConfigLibEvent, filterByEventName: ConfigLibConfigReloadEvent);
     }
@@ -44,7 +44,7 @@ public sealed class SurroundWeatherModSystem : ModSystem
         base.StartClientSide(api);
         clientApi = api;
         harmony = new Harmony(Mod.Info.ModID);
-        harmony.PatchAll(typeof(SurroundWeatherModSystem).Assembly);
+        harmony.PatchAll(typeof(SpatialAudioEffectsModSystem).Assembly);
         CustomSoundRegistry.Register(api, Mod.Logger);
         RegisterCommands(api);
         AmbientSoundPlacementPatch.Initialize(api);
@@ -69,7 +69,7 @@ public sealed class SurroundWeatherModSystem : ModSystem
             return;
         }
 
-        SurroundWeatherConfigManager.Load(api, Mod.Logger);
+        SpatialAudioEffectsConfigManager.Load(api, Mod.Logger);
         if (clientApi != null)
         {
             ApplyRuntimeConfig();
@@ -78,7 +78,7 @@ public sealed class SurroundWeatherModSystem : ModSystem
 
     private void ApplyRuntimeConfig()
     {
-        SurroundWeatherConfig config = SurroundWeatherConfigManager.Current;
+        SpatialAudioEffectsConfig config = SpatialAudioEffectsConfigManager.Current;
         WeatherBedOverrides.Apply(clientApi, Mod.Logger, config.ReplaceVanillaWeatherBeds, config.ExperimentalRainSurfaceEmitters, config.ExperimentalWindEmitters);
 
         // Every emitter is an EmitterField: they lead the listener, turn over steadily and fade alike.
@@ -125,13 +125,13 @@ public sealed class SurroundWeatherModSystem : ModSystem
         }
     }
 
-    private static SurroundWeatherConfig Config => SurroundWeatherConfigManager.Current;
+    private static SpatialAudioEffectsConfig Config => SpatialAudioEffectsConfigManager.Current;
 
     private void RegisterCommands(ICoreClientAPI api)
     {
-        api.ChatCommands.Create("surroundweather")
-            .WithDescription("Surround Weather: what its emitters are doing")
-            .WithAlias("sw")
+        api.ChatCommands.Create("spatialaudio")
+            .WithDescription("Spatial Audio Effects: what its emitters are doing")
+            .WithAlias("sae")
             .BeginSubCommand("status")
                 .WithDescription("Every emitter field: how many are playing, and how strongly the weather is driving it")
                 .HandleWith(_ => TextCommandResult.Success(Status()))
@@ -146,7 +146,7 @@ public sealed class SurroundWeatherModSystem : ModSystem
     {
         if (fields.Count == 0)
         {
-            return "No emitter fields are on. See ModConfig/surroundweather.json.";
+            return "No emitter fields are on. See ModConfig/spatialaudioeffects.json.";
         }
 
         var lines = new List<string>();
@@ -177,13 +177,13 @@ public sealed class SurroundWeatherModSystem : ModSystem
             }
         }
 
-        return "The window emitters are off (ExperimentalWindowRainEmitters in ModConfig/surroundweather.json).";
+        return "The window emitters are off (ExperimentalWindowRainEmitters in ModConfig/spatialaudioeffects.json).";
     }
 
     private void AddField(EmitterField field, string name, Func<bool> debugEnabled, int color, float loudest)
     {
         var renderer = new EmitterFieldDebugRenderer(clientApi, field, debugEnabled, color, loudest);
-        clientApi.Event.RegisterRenderer(renderer, EnumRenderStage.Opaque, "surroundweather-" + name + "debug");
+        clientApi.Event.RegisterRenderer(renderer, EnumRenderStage.Opaque, "spatialaudioeffects-" + name + "debug");
         fields.Add((field, renderer));
     }
 

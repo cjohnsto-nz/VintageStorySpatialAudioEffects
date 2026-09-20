@@ -5,7 +5,7 @@ using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
 using Vintagestory.API.MathTools;
 
-namespace SurroundWeather;
+namespace SpatialAudioEffects;
 
 /// <summary>
 /// Rain on the windows, from each window, on its weather side.
@@ -35,7 +35,7 @@ internal sealed class RainWindowField : EmitterField
     {
     }
 
-    private static SurroundWeatherConfig Config => SurroundWeatherConfigManager.Current;
+    private static SpatialAudioEffectsConfig Config => SpatialAudioEffectsConfigManager.Current;
 
     /// <summary>A cell per column, so every pane within reach gets its own emitter.</summary>
     protected override double NearSpacing => 1.0;
