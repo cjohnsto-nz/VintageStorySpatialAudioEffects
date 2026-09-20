@@ -30,7 +30,10 @@ public sealed class SurroundWeatherConfig
     public bool ExperimentalRainSurfaceEmitters { get; set; } = false;
 
     /// <summary>Rain emitters around you at full rain (fewer in light rain).</summary>
-    public int RainSurfaceEmitterCount { get; set; } = 12;
+    public int RainSurfaceEmitterCount { get; set; } = 16;
+
+    /// <summary>Blocks between rain emitters. Lower packs more into a small opening, such as a cave mouth.</summary>
+    public float RainSurfaceEmitterSpacing { get; set; } = 3f;
 
     /// <summary>How far out (blocks) the surface emitters are placed.</summary>
     public float RainSurfaceEmitterRadius { get; set; } = 18f;
