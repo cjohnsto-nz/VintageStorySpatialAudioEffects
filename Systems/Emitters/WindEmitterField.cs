@@ -86,12 +86,15 @@ internal sealed class WindEmitterField : EmitterField
         return intensity >= MinWind;
     }
 
-    protected override bool TryGetCell(IBlockAccessor blocks, int x, int z, int size, EntityPos playerPos, out double y, out int kind)
+    protected override bool TryGetCell(IBlockAccessor blocks, int x, int z, int size, EntityPos playerPos,
+                                       out double px, out double py, out double pz, out int kind)
     {
         // Open to the sky at the cell's centre: the air above the ground, a roof, a hilltop.
-        y = blocks.GetRainMapHeightAt(x, z) + 1.0 + HeightAboveSurface;
+        px = x + 0.5;
+        py = blocks.GetRainMapHeightAt(x, z) + 1.0 + HeightAboveSurface;
+        pz = z + 0.5;
         kind = 0;
-        return Math.Abs(y - playerPos.Y) <= MaxVerticalOffset;
+        return Math.Abs(py - playerPos.Y) <= MaxVerticalOffset;
     }
 
     protected override ILoadedSound CreateSound(in EmitterCell cell, float intensity, out int variant)

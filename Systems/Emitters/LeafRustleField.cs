@@ -59,11 +59,14 @@ internal sealed class LeafRustleField : EmitterField
 
     protected override int MaxCount(float intensity) => (int)Math.Round(10f + (26f * intensity));
 
-    protected override bool TryGetCell(IBlockAccessor blocks, int x, int z, int size, EntityPos playerPos, out double y, out int kind)
+    protected override bool TryGetCell(IBlockAccessor blocks, int x, int z, int size, EntityPos playerPos,
+                                       out double px, out double py, out double pz, out int kind)
     {
+        px = x + 0.5;
+        pz = z + 0.5;
         // The foliage in the cell nearest a little above head height, where a canopy's edge is.
         // Small cells are searched whole; large ones on a 3 x 3 lattice of columns.
-        y = 0;
+        py = 0;
         kind = Leaves;
         double wantedY = playerPos.Y + 1.5;
         double best = double.MaxValue;
@@ -97,7 +100,9 @@ internal sealed class LeafRustleField : EmitterField
                     }
 
                     best = offset;
-                    y = baseY + dy + 0.75;
+                    px = pos.X + 0.5;
+                    py = pos.Y + 0.75;
+                    pz = pos.Z + 0.5;
                     kind = reeds ? Reeds : Leaves;
                 }
             }

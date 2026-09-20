@@ -55,7 +55,17 @@ public sealed class SurroundWeatherConfig
     public float WindEmitterVolume { get; set; } = 1f;
 
     /// <summary>
-    /// Play a block's ambient sound (rain on windows) from the nearest block that makes it, rather
+    /// Experimental: each window near you gets its own quiet emitter, just outside the pane where
+    /// the rain lands, instead of vanilla's one sound for every pane at once (which indoors plays
+    /// from your own head). Takes hold within a few seconds, without reloading the world.
+    /// </summary>
+    public bool ExperimentalWindowRainEmitters { get; set; } = false;
+
+    /// <summary>How loud one window is in full rain.</summary>
+    public float RainWindowVolume { get; set; } = 0.25f;
+
+    /// <summary>
+    /// Play a block's ambient sound (a beehive, a translocator) from the nearest block that makes it, rather
     /// than from vanilla's bounding box, which puts it on your head indoors.
     /// </summary>
     public bool PlaceAmbientSoundsOnTheirBlocks { get; set; } = true;

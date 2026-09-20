@@ -107,11 +107,12 @@ internal abstract class EmitterField : IDisposable
     protected virtual float RandomStartFraction => 1f;
 
     /// <summary>
-    /// What is in the cell whose centre column is (<paramref name="x"/>, <paramref name="z"/>) and
-    /// which is <paramref name="size"/> blocks wide, or false if nothing of this field is there.
-    /// Must give the same answer for the same cell.
+    /// Where this field plays in the cell whose centre column is (<paramref name="x"/>,
+    /// <paramref name="z"/>) and which is <paramref name="size"/> blocks wide, or false if nothing
+    /// of it is there. Must give the same answer for the same cell.
     /// </summary>
-    protected abstract bool TryGetCell(IBlockAccessor blocks, int x, int z, int size, EntityPos playerPos, out double y, out int kind);
+    protected abstract bool TryGetCell(IBlockAccessor blocks, int x, int z, int size, EntityPos playerPos,
+                                       out double px, out double py, out double pz, out int kind);
 
     /// <summary>The sound for a cell: created, not started. <paramref name="variant"/> is the field's note of what it chose.</summary>
     protected abstract ILoadedSound CreateSound(in EmitterCell cell, float intensity, out int variant);
@@ -388,15 +389,13 @@ internal abstract class EmitterField : IDisposable
                     continue;
                 }
 
-                if (!TryGetCell(blocks, x, z, size, playerPos, out double y, out int kind))
+                if (!TryGetCell(blocks, x, z, size, playerPos, out double ex, out double ey, out double ez, out int kind))
                 {
                     continue;
                 }
 
-                double ex = x + 0.5;
-                double ez = z + 0.5;
                 double px = ex - ears.X;
-                double py = y - ears.Y;
+                double py = ey - ears.Y;
                 double pz = ez - ears.Z;
                 if ((px * px) + (py * py) + (pz * pz) < minRadiusSq)
                 {
@@ -404,12 +403,12 @@ internal abstract class EmitterField : IDisposable
                 }
 
                 long key = ((long)level << 58) | ((long)(cellX & 0x1FFFFFF) << 29) | (long)(cellZ & 0x1FFFFFF);
-                if (CullOccluded && IsBlocked(key, ears, ex, y, ez, nowMs))
+                if (CullOccluded && IsBlocked(key, ears, ex, ey, ez, nowMs))
                 {
                     continue;
                 }
 
-                cells.Add(new EmitterCell(key, ex, y, ez, kind, gain));
+                cells.Add(new EmitterCell(key, ex, ey, ez, kind, gain));
             }
         }
     }

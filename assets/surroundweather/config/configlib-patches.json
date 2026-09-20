@@ -202,6 +202,31 @@
       }
     },
     {
+      "type": "separator",
+      "title": "Experimental: rain on windows"
+    },
+    {
+      "code": "ExperimentalWindowRainEmitters",
+      "type": "boolean",
+      "default": false,
+      "clientSide": true,
+      "ingui": "Rain on windows (experimental)",
+      "comment": "Each window near you gets its own quiet emitter just outside the pane, instead of vanilla's one sound for every pane at once."
+    },
+    {
+      "code": "RainWindowVolume",
+      "type": "float",
+      "default": 0.25,
+      "clientSide": true,
+      "ingui": "Window rain volume",
+      "comment": "How loud one window is in full rain.",
+      "range": {
+        "min": 0.0,
+        "max": 2.0,
+        "step": 0.05
+      }
+    },
+    {
       "code": "PlaceAmbientSoundsOnTheirBlocks",
       "type": "boolean",
       "default": true,

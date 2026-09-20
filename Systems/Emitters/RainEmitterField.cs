@@ -97,13 +97,16 @@ internal sealed class RainEmitterField : EmitterField
     /// <summary>A surface further above or below the listener than this is not theirs to hear.</summary>
     private const double MaxVerticalOffset = 20.0;
 
-    protected override bool TryGetCell(IBlockAccessor blocks, int x, int z, int size, EntityPos playerPos, out double y, out int kind)
+    protected override bool TryGetCell(IBlockAccessor blocks, int x, int z, int size, EntityPos playerPos,
+                                       out double px, out double py, out double pz, out int kind)
     {
         // The top of the cell's centre column's rain-blocking block: the ground, a roof.
         int surfaceY = blocks.GetRainMapHeightAt(x, z);
-        y = surfaceY + 1.0 + HeightAboveSurface;
+        px = x + 0.5;
+        py = surfaceY + 1.0 + HeightAboveSurface;
+        pz = z + 0.5;
         kind = OnGround;
-        if (Math.Abs(y - playerPos.Y) > MaxVerticalOffset)
+        if (Math.Abs(py - playerPos.Y) > MaxVerticalOffset)
         {
             return false;
         }
