@@ -12,7 +12,7 @@ public sealed class SurroundWeatherConfig
     public float LeafRustleVolumeMultiplier { get; set; } = 1.75f;
     public float LeafRustlePitchVariationMultiplier { get; set; } = 1.5f;
 
-    /// <summary>Blocks between rustles playing at once: one tree gets about one at a time.</summary>
+    /// <summary>Blocks between rustles near you (each ring further out doubles it).</summary>
     public float LeafRustleEmitterSpacing { get; set; } = 5f;
 
     /// <summary>Seconds a rustle takes to fade out once it falls behind you or out of range.</summary>
@@ -29,11 +29,11 @@ public sealed class SurroundWeatherConfig
     /// </summary>
     public bool ExperimentalRainSurfaceEmitters { get; set; } = false;
 
-    /// <summary>Rain emitters around you at full rain (fewer in light rain).</summary>
-    public int RainSurfaceEmitterCount { get; set; } = 24;
+    /// <summary>The most rain emitters at once; the grid's nearest cells win.</summary>
+    public int RainSurfaceEmitterCount { get; set; } = 48;
 
-    /// <summary>Blocks between rain emitters. Lower packs more into a small opening, such as a cave mouth.</summary>
-    public float RainSurfaceEmitterSpacing { get; set; } = 2f;
+    /// <summary>Blocks between rain emitters near you (one every this many blocks out to three times it; each ring beyond doubles it).</summary>
+    public float RainSurfaceEmitterSpacing { get; set; } = 3f;
 
     /// <summary>Seconds an emitter plays before its place moves on, so rain never sits in one spot.</summary>
     public float RainSurfaceEmitterLifetimeSeconds { get; set; } = 3f;

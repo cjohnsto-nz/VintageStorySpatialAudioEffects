@@ -25,7 +25,6 @@ internal enum RainFieldProfile
 /// </summary>
 internal sealed class RainEmitterField : EmitterField
 {
-    private const int GridStep = 2;
     private const float MediumRainFrom = 0.35f;
     private const float HeavyRainFrom = 0.7f;
     private const float BaseVolume = 0.85f;
@@ -63,11 +62,11 @@ internal sealed class RainEmitterField : EmitterField
 
     private bool Loops => profile == RainFieldProfile.SurfaceLoops;
 
-    protected override double Radius => Loops ? Config.RainSurfaceEmitterRadius : 18.0;
+    protected override double Radius => Loops ? Config.RainSurfaceEmitterRadius : 20.0;
+
+    protected override double NearSpacing => Loops ? Config.RainSurfaceEmitterSpacing : 5.0;
 
     protected override double MinRadius => Loops ? 1.5 : 7.5;
-
-    protected override double Spacing => Loops ? Config.RainSurfaceEmitterSpacing : 4.0;
 
     protected override double LifetimeSeconds => Loops ? Config.RainSurfaceEmitterLifetimeSeconds : 6.0;
 
@@ -87,56 +86,28 @@ internal sealed class RainEmitterField : EmitterField
         return true;
     }
 
-    protected override int TargetCount(float intensity) => Loops
-        ? (int)Math.Round(Math.Max(2, Config.RainSurfaceEmitterCount) * (0.35f + (0.65f * intensity)))
-        : (int)Math.Round(6f + (10f * intensity));
+    protected override int MaxCount(float intensity) => Loops ? Math.Max(4, Config.RainSurfaceEmitterCount) : 16;
 
-    protected override void CollectCandidates(Vec3d centre, double radius, EntityPos playerPos, List<EmitterCandidate> into)
+    /// <summary>A surface further above or below the listener than this is not theirs to hear.</summary>
+    private const double MaxVerticalOffset = 20.0;
+
+    protected override bool TryGetCell(IBlockAccessor blocks, int x, int z, int size, EntityPos playerPos, out double y, out int kind)
     {
-        IBlockAccessor blocks = capi.World?.BlockAccessor;
-        if (blocks == null)
+        // The top of the cell's centre column's rain-blocking block: the ground, a roof.
+        int surfaceY = blocks.GetRainMapHeightAt(x, z);
+        y = surfaceY + 1.0;
+        kind = OnGround;
+        if (Math.Abs(y - playerPos.Y) > MaxVerticalOffset)
         {
-            return;
+            return false;
         }
 
-        // A fixed grid (not the centre's own cell), so the same spots come up as the field moves.
-        int reach = (int)Math.Ceiling(radius);
-        int baseX = ((int)Math.Floor(centre.X) / GridStep) * GridStep;
-        int baseZ = ((int)Math.Floor(centre.Z) / GridStep) * GridStep;
-        var pos = new BlockPos(0, 0, 0, playerPos.Dimension);
-        for (int dx = -reach; dx <= reach; dx += GridStep)
-        {
-            for (int dz = -reach; dz <= reach; dz += GridStep)
-            {
-                int x = baseX + dx;
-                int z = baseZ + dz;
-                double ex = x + 0.5;
-                double ez = z + 0.5;
-                double cx = ex - centre.X;
-                double cz = ez - centre.Z;
-                if ((cx * cx) + (cz * cz) > radius * radius)
-                {
-                    continue;
-                }
-
-                // The top of this column's rain-blocking block: the ground, a roof.
-                int surfaceY = blocks.GetRainMapHeightAt(x, z);
-                double ey = surfaceY + 1.0;
-                double verticalOffset = Math.Abs(ey - playerPos.Y);
-                if (verticalOffset > MaxVerticalOffset)
-                {
-                    continue;
-                }
-
-                pos.Set(x, surfaceY, z);
-                EnumBlockMaterial material = blocks.GetBlock(pos)?.BlockMaterial ?? EnumBlockMaterial.Air;
-                int kind = material == EnumBlockMaterial.Leaves ? OnLeaves : material == EnumBlockMaterial.Water ? OnWater : OnGround;
-                into.Add(new EmitterCandidate(ex, ey, ez, 1.0 - (verticalOffset / MaxVerticalOffset), kind));
-            }
-        }
+        EnumBlockMaterial material = blocks.GetBlock(new BlockPos(x, surfaceY, z, playerPos.Dimension))?.BlockMaterial ?? EnumBlockMaterial.Air;
+        kind = material == EnumBlockMaterial.Leaves ? OnLeaves : material == EnumBlockMaterial.Water ? OnWater : OnGround;
+        return true;
     }
 
-    protected override ILoadedSound CreateSound(in EmitterCandidate candidate, float intensity, out int variant)
+    protected override ILoadedSound CreateSound(in EmitterCell candidate, float intensity, out int variant)
     {
         // What the rain lands on picks the sound as much as how hard it falls.
         variant = !Loops ? Splash : candidate.Kind == OnLeaves ? Canopy : SetFor(intensity);

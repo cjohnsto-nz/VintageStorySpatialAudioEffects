@@ -106,23 +106,23 @@
     {
       "code": "RainSurfaceEmitterCount",
       "type": "integer",
-      "default": 24,
+      "default": 48,
       "clientSide": true,
       "ingui": "Rain emitters",
-      "comment": "Rain emitters around you at full rain.",
+      "comment": "The most rain emitters at once; the grid's nearest cells win.",
       "range": {
-        "min": 2,
-        "max": 32,
+        "min": 4,
+        "max": 128,
         "step": 1
       }
     },
     {
       "code": "RainSurfaceEmitterSpacing",
       "type": "float",
-      "default": 2.0,
+      "default": 3.0,
       "clientSide": true,
       "ingui": "Rain emitter spacing",
-      "comment": "Blocks between rain emitters (lower packs more into a small opening).",
+      "comment": "Blocks between rain emitters near you; each ring further out doubles it.",
       "range": {
         "min": 1.0,
         "max": 12.0,

@@ -7,53 +7,45 @@ using Vintagestory.API.MathTools;
 
 namespace SurroundWeather;
 
-/// <summary>A place a field could play from, as its kind of field found it.</summary>
-/// <param name="Quality">0..1, the field's own judgement of the spot (its level, its exposure).</param>
+/// <summary>What a field puts in one grid cell.</summary>
+/// <param name="Key">The cell: one emitter per key.</param>
 /// <param name="Kind">What is there, in the field's own terms (a canopy, a reed).</param>
-internal readonly record struct EmitterCandidate(double X, double Y, double Z, double Quality, int Kind)
-{
-    public double Score { get; init; }
-}
+/// <param name="Gain">The cell's share of the level: a far cell stands for more ground than a near one.</param>
+internal readonly record struct EmitterCell(long Key, double X, double Y, double Z, int Kind, float Gain);
 
 /// <summary>What the debug overlay draws for one emitter.</summary>
 internal readonly record struct EmitterVisual(Vec3d Position, float Volume, bool FadingOut);
 
 /// <summary>
-/// A field of short-lived positional sounds kept around the listener: rain on the ground, leaves in
-/// the wind. What every such field needs is here, so they all behave alike:
+/// A field of positional sounds on a deterministic grid around the listener: rain on the ground,
+/// leaves in the wind. The grid is fixed to the world and comes in rings: cells of the near
+/// spacing out to three of them around the listener, and twice the size in every ring further out. Every cell in range
+/// holds exactly one emitter, so coverage is even, dense where it matters, and the same every time.
 /// <list type="bullet">
-///   <item><b>It leads the listener.</b> The field is centred ahead along the listener's velocity
-///         (LeadSeconds of travel), in the direction they move, not where they look. Emitters the
-///         field has left behind are retired at once and new ones open ahead, so running does not
-///         outrun the sound.</item>
-///   <item><b>Turnover is a steady trickle.</b> Births and retirements are paid for from a budget
-///         that fills at count / lifetime per second (faster when moving), a few per step at most.
-///         Nothing happens in bursts, so the field never swells and dies in waves, and no emitter
-///         stays long enough to be heard as a fixed speaker.</item>
-///   <item><b>Fades are equal-power and run per frame.</b> The game's own fades are linear in dB,
-///         nearly silent for most of their length; crossfading with them dips.</item>
-///   <item><b>Spots behind rock are not played</b> (optional), and live emitters that end up there
-///         are retired.</item>
+///   <item><b>It leads the listener</b>: the rings are centred ahead along the listener's velocity,
+///         so running does not outrun the sound. Cells that leave the rings fade at once, and
+///         cells that enter are filled nearest first, a few per step.</item>
+///   <item><b>Nothing loops</b>: a cell plays one slice of a recording, then the next slice
+///         crossfades in at the same spot. Lives are spread, so cells never change in step.</item>
+///   <item><b>Fades are equal-power and run per frame</b>: the game's own fades are linear in dB,
+///         nearly silent for most of their length, and crossfading with them dips.</item>
+///   <item><b>Cells behind rock are left empty</b> (optional), and emptied when rock comes between.</item>
 /// </list>
-/// A field says when it is active and how strongly, where its candidates are, and what each sounds
-/// like.
+/// A field says when it is active and how strongly, what is in a cell, and what that sounds like.
 /// </summary>
 internal abstract class EmitterField : IDisposable
 {
     private const int FrameTickMs = 20;
     private const double LogicStepSeconds = 0.1;
-    private const long CandidateRefreshMs = 500;
-    private const double CandidateMoveRefresh = 2.0;
-    private const int MaxCandidatesTested = 64;
-    private const int MaxSpawnsPerStep = 3;
-    private const float MaxBudget = 3f;
+    private const long CellRefreshMs = 1000;
+    private const double CellMoveRefresh = 1.0;
+    private const int MaxSpawnsPerStep = 6;
     private const float FastFadeSeconds = 0.4f;
-    private const int Octants = 8;
-    /// <summary>Blocks per second above which the listener counts as travelling.</summary>
-    private const double MovingSpeed = 0.5;
+    private const long OcclusionCacheMs = 1000;
     private const double VelocitySmoothingSeconds = 0.4;
+    private const double MovingSpeed = 0.5;
     /// <summary>
-    /// Solid blocks in the way that a spot may still be played through. A roof and its rafters
+    /// Solid blocks in the way that a cell may still be played through. A roof and its rafters
     /// are a few; the depth of a cave is many more. The audio engine muffles what is played.
     /// </summary>
     protected const int BlockedLimit = 4;
@@ -62,20 +54,20 @@ internal abstract class EmitterField : IDisposable
     protected readonly Random random = new();
 
     private readonly List<Emitter> emitters = new();
-    private readonly List<EmitterCandidate> candidates = new();
-    private readonly List<EmitterCandidate> rough = new();
+    private readonly Dictionary<long, Emitter> liveByCell = new();
+    private readonly List<EmitterCell> cells = new();
+    private readonly HashSet<long> wantedKeys = new();
+    private readonly Dictionary<long, (bool Blocked, long AtMs)> occlusion = new();
     private readonly object emittersLock = new();
     private readonly Vec3d lastPosition = new();
-    private readonly Vec3d lastCandidateCentre = new();
+    private readonly Vec3d lastCellCentre = new();
     private long tickListenerId;
     private bool hasLastPosition;
-    private bool hasCandidateCentre;
-    private long lastCandidateRefreshMs;
+    private bool hasCells;
+    private long lastCellRefreshMs;
     private double velocityX;
     private double velocityZ;
     private double logicAccumulator;
-    private float budget;
-    private int occlusionCursor;
 
     protected EmitterField(ICoreClientAPI capi)
     {
@@ -88,49 +80,55 @@ internal abstract class EmitterField : IDisposable
     /// <summary>Whether the field plays now, and how strongly (0..1): the rainfall, the wind.</summary>
     protected abstract bool TryGetIntensity(Entity player, out float intensity);
 
-    protected abstract int TargetCount(float intensity);
+    /// <summary>The most emitters at once; the nearest cells win.</summary>
+    protected abstract int MaxCount(float intensity);
 
-    /// <summary>Blocks around the (led) centre in which emitters live.</summary>
+    /// <summary>Blocks between cells around the listener; every ring outward doubles it.</summary>
+    protected abstract double NearSpacing { get; }
+
+    /// <summary>How far out (blocks) the rings go.</summary>
     protected abstract double Radius { get; }
 
-    /// <summary>Nothing is placed nearer the listener's head than this (in any direction: a roof overhead counts by its height).</summary>
-    protected virtual double MinRadius => 2.0;
+    /// <summary>No cell nearer the listener's head than this plays (in any direction).</summary>
+    protected virtual double MinRadius => 1.5;
 
-    /// <summary>Blocks between emitters.</summary>
-    protected abstract double Spacing { get; }
-
-    /// <summary>Seconds an emitter plays before its place moves on (each gets half to one and a half of it).</summary>
+    /// <summary>Seconds a slice plays before the next takes over (each gets half to one and a half of it).</summary>
     protected abstract double LifetimeSeconds { get; }
 
     protected virtual float FadeSeconds => 1.0f;
 
-    /// <summary>Seconds of the listener's travel the field is centred ahead by.</summary>
-    protected virtual double LeadSeconds => 2.0;
+    /// <summary>Seconds of the listener's travel the rings are centred ahead by.</summary>
+    protected virtual double LeadSeconds => 1.5;
 
-    /// <summary>Drop spots (and live emitters) with more than BlockedLimit solid blocks in the way.</summary>
+    /// <summary>Leave cells with more than BlockedLimit solid blocks in the way empty.</summary>
     protected virtual bool CullOccluded => true;
 
-    /// <summary>A surface further above or below the listener than this is not theirs to hear.</summary>
-    protected virtual double MaxVerticalOffset => 20.0;
-
-    /// <summary>Every place the field could play from, within <paramref name="radius"/> of the centre.</summary>
-    protected abstract void CollectCandidates(Vec3d centre, double radius, EntityPos playerPos, List<EmitterCandidate> into);
-
-    /// <summary>The sound for a spot: created, not started. <paramref name="variant"/> is the field's note of what it chose.</summary>
-    protected abstract ILoadedSound CreateSound(in EmitterCandidate candidate, float intensity, out int variant);
-
-    /// <summary>How loud an emitter should be now.</summary>
-    protected abstract float VolumeOf(int variant, int kind, float intensity);
-
-    /// <summary>True when the weather has moved on from what this emitter plays: it is retired as its turn comes.</summary>
-    protected virtual bool IsStale(int variant, int kind, float intensity) => false;
+    /// <summary>1 starts a slice anywhere it fits in the recording; 0 always at its start (a splash has an attack).</summary>
+    protected virtual float RandomStartFraction => 1f;
 
     /// <summary>
-    /// Emitters never loop: each plays one slice of its recording, as long as its life, then its
-    /// place moves on. 1 starts the slice anywhere it fits (so no two play the same stretch);
-    /// 0 always starts at the start (a splash has an attack).
+    /// What is in the cell whose centre column is (<paramref name="x"/>, <paramref name="z"/>) and
+    /// which is <paramref name="size"/> blocks wide, or false if nothing of this field is there.
+    /// Must give the same answer for the same cell.
     /// </summary>
-    protected virtual float RandomStartFraction => 1f;
+    protected abstract bool TryGetCell(IBlockAccessor blocks, int x, int z, int size, EntityPos playerPos, out double y, out int kind);
+
+    /// <summary>The sound for a cell: created, not started. <paramref name="variant"/> is the field's note of what it chose.</summary>
+    protected abstract ILoadedSound CreateSound(in EmitterCell cell, float intensity, out int variant);
+
+    /// <summary>How loud an emitter in a near cell should be now (the cell's gain is applied on top).</summary>
+    protected abstract float VolumeOf(int variant, int kind, float intensity);
+
+    /// <summary>True when the weather has moved on from what this emitter plays: its cell takes a new slice.</summary>
+    protected virtual bool IsStale(int variant, int kind, float intensity) => false;
+
+    /// <summary>How much louder a cell of ring <paramref name="level"/> plays than a near one (it stands for more ground).</summary>
+    protected virtual float RingGain(int level) => level switch
+    {
+        0 => 0.45f,
+        1 => 0.7f,
+        _ => 1f,
+    };
 
     // ---- shared machinery ----
 
@@ -150,6 +148,7 @@ internal abstract class EmitterField : IDisposable
             }
 
             emitters.Clear();
+            liveByCell.Clear();
         }
     }
 
@@ -160,7 +159,7 @@ internal abstract class EmitterField : IDisposable
             var snapshot = new List<EmitterVisual>(emitters.Count);
             foreach (Emitter emitter in emitters)
             {
-                snapshot.Add(new EmitterVisual(new Vec3d(emitter.X, emitter.Y, emitter.Z), emitter.Applied, emitter.Retiring));
+                snapshot.Add(new EmitterVisual(new Vec3d(emitter.Cell.X, emitter.Cell.Y, emitter.Cell.Z), emitter.Applied, emitter.Retiring));
             }
 
             return snapshot;
@@ -193,6 +192,7 @@ internal abstract class EmitterField : IDisposable
             Emitter emitter = emitters[i];
             if (emitter.Sound.IsDisposed)
             {
+                Forget(emitter);
                 emitters.RemoveAt(i);
                 continue;
             }
@@ -232,275 +232,218 @@ internal abstract class EmitterField : IDisposable
                 Retire(emitter, FadeSeconds);
             }
 
-            budget = 0f;
             hasLastPosition = false;
+            hasCells = false;
             return;
         }
 
         EntityPos playerPos = player.Pos;
-        Motion motion = UpdateMotion(player, stepSeconds);
-        double radius = Math.Max(MinRadius + 1.0, Radius);
-        double lead = Math.Min(motion.Speed * LeadSeconds, radius * 0.75);
-        var centre = new Vec3d(playerPos.X + (motion.DirX * lead), playerPos.Y, playerPos.Z + (motion.DirZ * lead));
+        (double dirX, double dirZ, double speed) = UpdateMotion(playerPos, stepSeconds);
+        double radius = Math.Max(NearSpacing * 2.0, Radius);
+        double lead = Math.Min(speed * LeadSeconds, radius * 0.6);
+        var centre = new Vec3d(playerPos.X + (dirX * lead), playerPos.Y, playerPos.Z + (dirZ * lead));
         Vec3d ears = new(playerPos.X + player.LocalEyePos.X, playerPos.Y + player.LocalEyePos.Y, playerPos.Z + player.LocalEyePos.Z);
 
-        int live = UpdateLive(centre, radius, playerPos, ears, intensity, nowMs);
-        RefreshCandidates(centre, radius, playerPos, ears, motion, nowMs);
+        RefreshCells(centre, radius, playerPos, ears, intensity, nowMs);
 
-        int target = Math.Max(0, TargetCount(intensity));
-        if (live > target)
-        {
-            Emitter surplus = Worst(centre, radius, motion, nowMs, expiredFirst: true);
-            if (surplus != null)
-            {
-                Retire(surplus, FadeSeconds);
-                live--;
-            }
-        }
-
-        // The trickle: count / lifetime births a second keeps every emitter about a lifetime old,
-        // and travelling pays for more, because the field's ground is changing under it.
-        double lifetime = Math.Max(0.5, LifetimeSeconds);
-        float rate = (float)(target / lifetime * (1.0 + Math.Min(3.0, motion.Speed / 2.0)));
-        budget = Math.Min(MaxBudget, budget + (rate * (float)stepSeconds));
-
-        int spawned = 0;
-        var used = new HashSet<int>();
-        while (spawned < MaxSpawnsPerStep)
-        {
-            if (live < target)
-            {
-                // A free place (first fill, or something was dropped) is filled without waiting.
-                if (!Spawn(playerPos, intensity, nowMs, used))
-                {
-                    break;
-                }
-
-                live++;
-                spawned++;
-                continue;
-            }
-
-            if (budget < 1f || target == 0)
-            {
-                break;
-            }
-
-            // Full: a place changes hands. The expired go first, then whoever is worst placed,
-            // and only if there is somewhere better to be.
-            Emitter leaving = Worst(centre, radius, motion, nowMs, expiredFirst: true);
-            if (leaving == null)
-            {
-                break;
-            }
-
-            bool expired = leaving.ExpiresMs <= nowMs || IsStale(leaving.Variant, leaving.Kind, intensity);
-            if (!expired && (candidates.Count == 0 || candidates[0].Score < Value(leaving, centre, radius, motion) + 0.2))
-            {
-                break;
-            }
-
-            budget -= 1f;
-            if (!Spawn(playerPos, intensity, nowMs, used))
-            {
-                break;
-            }
-
-            Retire(leaving, FadeSeconds);
-            spawned++;
-        }
-    }
-
-    /// <summary>Volumes, and what has left the field, ended, or gone behind rock. Returns the live count.</summary>
-    private int UpdateLive(Vec3d centre, double radius, EntityPos playerPos, Vec3d ears, float intensity, long nowMs)
-    {
-        double keepSq = radius * 1.15 * (radius * 1.15);
-        int live = 0;
-        int index = 0;
-        int checkEvery = CullOccluded ? 3 : int.MaxValue;
-        occlusionCursor++;
+        // Cells that left the rings (or went behind rock) empty at once; the rest follow the weather.
         foreach (Emitter emitter in emitters)
         {
-            index++;
             if (emitter.Retiring)
             {
                 continue;
             }
 
-            if (nowMs - emitter.BornMs > 500 && emitter.Sound.HasStopped)
+            if (!wantedKeys.Contains(emitter.Cell.Key))
             {
-                emitter.Level = 0f;  // a one-shot that played out
-                emitter.Retiring = true;
+                Retire(emitter, FastFadeSeconds);
                 continue;
             }
 
-            double dx = emitter.X - centre.X;
-            double dz = emitter.Z - centre.Z;
-            bool outside = (dx * dx) + (dz * dz) > keepSq || Math.Abs(emitter.Y - playerPos.Y) > MaxVerticalOffset;
-            // A third of them each step: has rock come between us?
-            bool blocked = !outside && (index + occlusionCursor) % checkEvery == 0
-                && BlocksBetween(ears, emitter.X, emitter.Y, emitter.Z) > BlockedLimit;
-            if (outside || blocked)
-            {
-                Retire(emitter, FastFadeSeconds);  // left behind, or unheard: its place is wanted ahead
-                continue;
-            }
-
-            emitter.TargetVolume = GameMath.Clamp(VolumeOf(emitter.Variant, emitter.Kind, intensity), 0f, 1f);
-            live++;
+            emitter.TargetVolume = GameMath.Clamp(VolumeOf(emitter.Variant, emitter.Cell.Kind, intensity) * emitter.Cell.Gain, 0f, 1f);
         }
 
-        return live;
+        // Empty cells fill nearest first; then cells whose slice has run its life take the next
+        // one, crossfading in place. A few per step, so nothing starts in step.
+        int spawned = 0;
+        foreach (EmitterCell cell in cells)
+        {
+            if (spawned >= MaxSpawnsPerStep)
+            {
+                break;
+            }
+
+            if (!liveByCell.ContainsKey(cell.Key) && Spawn(cell, intensity, nowMs))
+            {
+                spawned++;
+            }
+        }
+
+        foreach (EmitterCell cell in cells)
+        {
+            if (spawned >= MaxSpawnsPerStep)
+            {
+                break;
+            }
+
+            if (!liveByCell.TryGetValue(cell.Key, out Emitter playing))
+            {
+                continue;
+            }
+
+            bool over = playing.ExpiresMs <= nowMs
+                || (nowMs - playing.BornMs > 500 && playing.Sound.HasStopped)
+                || IsStale(playing.Variant, cell.Kind, intensity);
+            if (!over)
+            {
+                continue;
+            }
+
+            Retire(playing, FadeSeconds);
+            if (Spawn(cell, intensity, nowMs))
+            {
+                spawned++;
+            }
+        }
     }
 
-    private void RefreshCandidates(Vec3d centre, double radius, EntityPos playerPos, Vec3d ears, Motion motion, long nowMs)
+    /// <summary>
+    /// The cells that should be playing: every cell of every ring around the centre that holds
+    /// something, is not at the listener's head or behind rock, nearest first, up to MaxCount.
+    /// </summary>
+    private void RefreshCells(Vec3d centre, double radius, EntityPos playerPos, Vec3d ears, float intensity, long nowMs)
     {
-        if (hasCandidateCentre && nowMs - lastCandidateRefreshMs < CandidateRefreshMs
-            && lastCandidateCentre.SquareDistanceTo(centre.X, centre.Y, centre.Z) < CandidateMoveRefresh * CandidateMoveRefresh)
+        if (hasCells && nowMs - lastCellRefreshMs < CellRefreshMs
+            && lastCellCentre.SquareDistanceTo(centre.X, centre.Y, centre.Z) < CellMoveRefresh * CellMoveRefresh)
         {
             return;
         }
 
-        candidates.Clear();
-        rough.Clear();
-        CollectCandidates(centre, radius, playerPos, rough);
+        IBlockAccessor blocks = capi.World?.BlockAccessor;
+        if (blocks == null)
+        {
+            return;
+        }
 
+        cells.Clear();
+        int nearSize = Math.Max(1, (int)Math.Round(NearSpacing));
+        double inner = 0.0;
+        for (int level = 0; inner < radius && level < 6; level++)
+        {
+            int size = nearSize << level;
+            double outer = Math.Min(radius, nearSize * 3.0 * (1 << level));
+            if (level == 5)
+            {
+                outer = radius;
+            }
+
+            AddRing(blocks, centre, inner, outer, size, level, playerPos, ears, nowMs);
+            inner = outer;
+        }
+
+        cells.Sort((left, right) => DistanceSq(left, ears).CompareTo(DistanceSq(right, ears)));
+        int max = Math.Max(0, MaxCount(intensity));
+        if (cells.Count > max)
+        {
+            cells.RemoveRange(max, cells.Count - max);
+        }
+
+        wantedKeys.Clear();
+        foreach (EmitterCell cell in cells)
+        {
+            wantedKeys.Add(cell.Key);
+        }
+
+        if (occlusion.Count > 4096)
+        {
+            occlusion.Clear();
+        }
+
+        lastCellRefreshMs = nowMs;
+        lastCellCentre.Set(centre.X, centre.Y, centre.Z);
+        hasCells = true;
+    }
+
+    /// <summary>The cells of one size whose centres lie between two radii of the centre.</summary>
+    private void AddRing(IBlockAccessor blocks, Vec3d centre, double inner, double outer, int size, int level, EntityPos playerPos, Vec3d ears, long nowMs)
+    {
+        // Cells are fixed to the world (multiples of their size), so they stay put as the listener moves.
+        int minCellX = (int)Math.Floor((centre.X - outer) / size);
+        int maxCellX = (int)Math.Floor((centre.X + outer) / size);
+        int minCellZ = (int)Math.Floor((centre.Z - outer) / size);
+        int maxCellZ = (int)Math.Floor((centre.Z + outer) / size);
         double minRadiusSq = MinRadius * MinRadius;
-        for (int i = rough.Count - 1; i >= 0; i--)
+        float gain = RingGain(level);
+        for (int cellX = minCellX; cellX <= maxCellX; cellX++)
         {
-            EmitterCandidate candidate = rough[i];
-            double px = candidate.X - ears.X;
-            double py = candidate.Y - ears.Y;
-            double pz = candidate.Z - ears.Z;
-            if ((px * px) + (py * py) + (pz * pz) < minRadiusSq || Math.Abs(candidate.Y - playerPos.Y) > MaxVerticalOffset)
+            for (int cellZ = minCellZ; cellZ <= maxCellZ; cellZ++)
             {
-                rough.RemoveAt(i);
-                continue;
-            }
+                int x = (cellX * size) + (size / 2);
+                int z = (cellZ * size) + (size / 2);
+                double dx = x + 0.5 - centre.X;
+                double dz = z + 0.5 - centre.Z;
+                double distanceSq = (dx * dx) + (dz * dz);
+                if (distanceSq < inner * inner || distanceSq >= outer * outer)
+                {
+                    continue;
+                }
 
-            rough[i] = candidate with { Score = Geometry(candidate.X, candidate.Z, candidate.Quality, centre, radius, motion) };
+                if (!TryGetCell(blocks, x, z, size, playerPos, out double y, out int kind))
+                {
+                    continue;
+                }
+
+                double ex = x + 0.5;
+                double ez = z + 0.5;
+                double px = ex - ears.X;
+                double py = y - ears.Y;
+                double pz = ez - ears.Z;
+                if ((px * px) + (py * py) + (pz * pz) < minRadiusSq)
+                {
+                    continue;
+                }
+
+                long key = ((long)level << 58) | ((long)(cellX & 0x1FFFFFF) << 29) | (long)(cellZ & 0x1FFFFFF);
+                if (CullOccluded && IsBlocked(key, ears, ex, y, ez, nowMs))
+                {
+                    continue;
+                }
+
+                cells.Add(new EmitterCell(key, ex, y, ez, kind, gain));
+            }
         }
-
-        rough.Sort((left, right) => right.Score.CompareTo(left.Score));
-        int tested = CullOccluded ? Math.Min(rough.Count, MaxCandidatesTested) : rough.Count;
-        for (int i = 0; i < tested; i++)
-        {
-            EmitterCandidate candidate = rough[i];
-            if (!CullOccluded)
-            {
-                candidates.Add(candidate);
-                continue;
-            }
-
-            int blocked = BlocksBetween(ears, candidate.X, candidate.Y, candidate.Z);
-            if (blocked > BlockedLimit)
-            {
-                continue;
-            }
-
-            // A clear way counts, but nearness counts for more: the roof over your head is the
-            // rain you hear most, though it is behind its own boards.
-            double openness = 1.0 - (blocked / (double)(BlockedLimit + 1));
-            candidates.Add(candidate with { Score = (openness * 0.35) + (candidate.Score * 0.65) });
-        }
-
-        candidates.Sort((left, right) => right.Score.CompareTo(left.Score));
-        lastCandidateRefreshMs = nowMs;
-        lastCandidateCentre.Set(centre.X, centre.Y, centre.Z);
-        hasCandidateCentre = true;
     }
 
-    /// <summary>Near the (led) centre, well judged by its field, and ahead of the way the listener goes.</summary>
-    private static double Geometry(double x, double z, double quality, Vec3d centre, double radius, Motion motion)
+    /// <summary>Whether rock lies between the listener and a cell; looked at once a second per cell.</summary>
+    private bool IsBlocked(long key, Vec3d ears, double x, double y, double z, long nowMs)
     {
-        double dx = x - centre.X;
-        double dz = z - centre.Z;
-        double distance = Math.Sqrt((dx * dx) + (dz * dz));
-        double nearness = Math.Max(0.0, 1.0 - (distance / radius));
-        double ahead = distance < 1e-6 ? 0.5 : ((((dx * motion.DirX) + (dz * motion.DirZ)) / distance) + 1.0) * 0.5;
-        double aheadWeight = motion.IsMoving ? 0.3 : 0.12;
-        return (nearness * (0.65 - aheadWeight)) + (quality * 0.35) + (ahead * aheadWeight);
+        if (occlusion.TryGetValue(key, out (bool Blocked, long AtMs) known) && nowMs - known.AtMs < OcclusionCacheMs)
+        {
+            return known.Blocked;
+        }
+
+        bool blocked = BlocksBetween(ears, x, y, z) > BlockedLimit;
+        occlusion[key] = (blocked, nowMs);
+        return blocked;
     }
 
-    private static double Value(Emitter emitter, Vec3d centre, double radius, Motion motion) =>
-        (Geometry(emitter.X, emitter.Z, emitter.Quality, centre, radius, motion) * 0.65) + 0.35;  // it was open when placed
-
-    /// <summary>The emitter whose place should change hands next: an expired one, else the worst placed.</summary>
-    private Emitter Worst(Vec3d centre, double radius, Motion motion, long nowMs, bool expiredFirst)
+    private static double DistanceSq(in EmitterCell cell, Vec3d ears)
     {
-        Emitter worst = null;
-        double worstValue = double.MaxValue;
-        foreach (Emitter emitter in emitters)
-        {
-            if (emitter.Retiring)
-            {
-                continue;
-            }
-
-            double value = Value(emitter, centre, radius, motion);
-            if (expiredFirst && emitter.ExpiresMs <= nowMs)
-            {
-                value -= 10.0 + ((nowMs - emitter.ExpiresMs) / 1000.0);  // the longest overdue first
-            }
-
-            if (value < worstValue)
-            {
-                worstValue = value;
-                worst = emitter;
-            }
-        }
-
-        return worst;
+        double dx = cell.X - ears.X;
+        double dy = cell.Y - ears.Y;
+        double dz = cell.Z - ears.Z;
+        return (dx * dx) + (dy * dy) + (dz * dz);
     }
 
-    /// <summary>Opens the best free candidate, the emptiest eighth of the compass first.</summary>
-    private bool Spawn(EntityPos playerPos, float intensity, long nowMs, HashSet<int> used)
+    /// <summary>One slice of a recording in a cell: never a loop, started anywhere it fits.</summary>
+    private bool Spawn(in EmitterCell cell, float intensity, long nowMs)
     {
-        var perOctant = new int[Octants];
-        foreach (Emitter emitter in emitters)
-        {
-            if (!emitter.Retiring)
-            {
-                perOctant[Octant(emitter.X - playerPos.X, emitter.Z - playerPos.Z)]++;
-            }
-        }
-
-        double spacingSq = Math.Max(0.25, Spacing * Spacing);
-        int best = -1;
-        double bestScore = double.MinValue;
-        for (int i = 0; i < candidates.Count; i++)
-        {
-            if (used.Contains(i))
-            {
-                continue;
-            }
-
-            EmitterCandidate candidate = candidates[i];
-            double score = candidate.Score - (0.1 * perOctant[Octant(candidate.X - playerPos.X, candidate.Z - playerPos.Z)]);
-            if (score <= bestScore || IsCrowded(candidate, spacingSq))
-            {
-                continue;
-            }
-
-            bestScore = score;
-            best = i;
-        }
-
-        if (best < 0)
-        {
-            return false;
-        }
-
-        used.Add(best);
-        EmitterCandidate chosen = candidates[best];
-        ILoadedSound sound = CreateSound(chosen, intensity, out int variant);
+        ILoadedSound sound = CreateSound(cell, intensity, out int variant);
         if (sound == null)
         {
             return false;
         }
 
-        // One slice of the recording, never a loop: the life fits inside the sample, and the
-        // slice starts anywhere it fits.
         double lifetime = Math.Max(0.5, LifetimeSeconds) * (0.5 + random.NextDouble());
         float length = sound.SoundLengthSeconds;
         if (length > 0.2f)
@@ -516,41 +459,21 @@ internal abstract class EmitterField : IDisposable
             sound.PlaybackPosition = (float)(random.NextDouble() * RandomStartFraction * room);
         }
 
-        emitters.Add(new Emitter(sound, chosen.X, chosen.Y, chosen.Z)
+        var emitter = new Emitter(sound, cell)
         {
-            Quality = chosen.Quality,
-            Kind = chosen.Kind,
             Variant = variant,
-            TargetVolume = GameMath.Clamp(VolumeOf(variant, chosen.Kind, intensity), 0f, 1f),
+            TargetVolume = GameMath.Clamp(VolumeOf(variant, cell.Kind, intensity) * cell.Gain, 0f, 1f),
             BornMs = nowMs,
             ExpiresMs = nowMs + (long)(lifetime * 1000.0),
-        });
+        };
+        emitters.Add(emitter);
+        liveByCell[cell.Key] = emitter;
         return true;
     }
 
-    private bool IsCrowded(in EmitterCandidate candidate, double spacingSq)
+    private void Retire(Emitter emitter, float seconds)
     {
-        foreach (Emitter emitter in emitters)
-        {
-            if (emitter.Retiring)
-            {
-                continue;
-            }
-
-            double dx = emitter.X - candidate.X;
-            double dy = emitter.Y - candidate.Y;
-            double dz = emitter.Z - candidate.Z;
-            if ((dx * dx) + (dy * dy) + (dz * dz) < spacingSq)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static void Retire(Emitter emitter, float seconds)
-    {
+        Forget(emitter);
         if (emitter.Retiring)
         {
             emitter.RetireSeconds = Math.Min(emitter.RetireSeconds, seconds);
@@ -559,6 +482,15 @@ internal abstract class EmitterField : IDisposable
 
         emitter.Retiring = true;
         emitter.RetireSeconds = seconds;
+    }
+
+    /// <summary>The emitter no longer holds its cell (it may still be fading out there).</summary>
+    private void Forget(Emitter emitter)
+    {
+        if (liveByCell.TryGetValue(emitter.Cell.Key, out Emitter holder) && ReferenceEquals(holder, emitter))
+        {
+            liveByCell.Remove(emitter.Cell.Key);
+        }
     }
 
     private static void Release(Emitter emitter)
@@ -570,10 +502,9 @@ internal abstract class EmitterField : IDisposable
         }
     }
 
-    /// <summary>The listener's smoothed velocity; the way they go, or (standing) the way they look.</summary>
-    private Motion UpdateMotion(Entity player, double stepSeconds)
+    /// <summary>The listener's smoothed velocity: the way they go and how fast (0 when standing).</summary>
+    private (double DirX, double DirZ, double Speed) UpdateMotion(EntityPos pos, double stepSeconds)
     {
-        EntityPos pos = player.Pos;
         if (hasLastPosition && stepSeconds > 1e-4)
         {
             double vx = (pos.X - lastPosition.X) / stepSeconds;
@@ -590,24 +521,8 @@ internal abstract class EmitterField : IDisposable
 
         lastPosition.Set(pos.X, pos.Y, pos.Z);
         hasLastPosition = true;
-
         double speed = Math.Sqrt((velocityX * velocityX) + (velocityZ * velocityZ));
-        if (speed > MovingSpeed)
-        {
-            return new Motion(velocityX / speed, velocityZ / speed, speed, true);
-        }
-
-        Vec3f view = pos.GetViewVector();
-        double length = Math.Sqrt((view.X * view.X) + (view.Z * view.Z));
-        return length > 1e-3
-            ? new Motion(view.X / length, view.Z / length, 0, false)
-            : new Motion(-Math.Sin(pos.Yaw), Math.Cos(pos.Yaw), 0, false);
-    }
-
-    private static int Octant(double relX, double relZ)
-    {
-        double angle = Math.Atan2(relZ, relX) + Math.PI;
-        return (int)(angle / (Math.PI * 2.0) * Octants) % Octants;
+        return speed > MovingSpeed ? (velocityX / speed, velocityZ / speed, speed) : (0, 0, 0);
     }
 
     /// <summary>
@@ -674,21 +589,11 @@ internal abstract class EmitterField : IDisposable
         && block.BlockMaterial != EnumBlockMaterial.Plant
         && block.BlockMaterial != EnumBlockMaterial.Leaves;
 
-    private readonly record struct Motion(double DirX, double DirZ, double Speed, bool IsMoving);
-
-    private sealed class Emitter(ILoadedSound sound, double x, double y, double z)
+    private sealed class Emitter(ILoadedSound sound, EmitterCell cell)
     {
         public ILoadedSound Sound { get; } = sound;
 
-        public double X { get; } = x;
-
-        public double Y { get; } = y;
-
-        public double Z { get; } = z;
-
-        public double Quality { get; init; }
-
-        public int Kind { get; init; }
+        public EmitterCell Cell { get; } = cell;
 
         public int Variant { get; init; }
 
