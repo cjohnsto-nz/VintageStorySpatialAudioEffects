@@ -22,6 +22,8 @@ internal sealed class RainWindowField : EmitterField
     internal const string WindowSound = "rainwindow";
 
     private const int VerticalReach = 6;
+    /// <summary>How far out from a pane to look for open sky: enough to see past an eave.</summary>
+    private const int OutwardReach = 3;
     private const float MinRainfall = 0.1f;
     /// <summary>Out from the middle of the pane: just past its face, in the weather.</summary>
     private const double OutsideOffset = 0.6;
@@ -48,6 +50,9 @@ internal sealed class RainWindowField : EmitterField
     protected override double LifetimeSeconds => 4.0;
 
     protected override int MaxCount(float intensity) => Math.Max(1, Config.RainWindowMaxCount);
+
+    /// <summary>Under investigation: say in the log how many panes are sounding, and where.</summary>
+    protected override bool LogState => true;
 
     /// <summary>Every window is its own pane, near or far.</summary>
     protected override float RingGain(int level) => 1f;
@@ -194,15 +199,15 @@ internal sealed class RainWindowField : EmitterField
         block?.Sounds?.Ambient?.Path?.Contains(WindowSound, StringComparison.OrdinalIgnoreCase) == true;
 
     /// <summary>
-    /// The side of a pane the rain falls on: an open neighbour with the sky above it, and nothing
-    /// else. Inside a room the sky is never open (the roof is in the way), so an emitter can never
-    /// end up indoors; a window between two rooms, or one under a deep eave, has no such side and
-    /// stays quiet.
+    /// The side of a pane the rain falls on: the one you can follow straight out, through open air,
+    /// until the sky is overhead. An eave of a block or two is still outside and still sounds; a
+    /// room is not, because its roof stays overhead however far across it you go. So an emitter
+    /// cannot end up on the inside face, and a window between two rooms stays quiet.
     /// </summary>
     private static bool TryGetWeatherSide(IBlockAccessor blocks, BlockPos pos, out BlockFacing side)
     {
         side = null;
-        var neighbour = new BlockPos(0, 0, 0, pos.dimension);
+        var probe = new BlockPos(0, 0, 0, pos.dimension);
         foreach (BlockFacing facing in BlockFacing.ALLFACES)
         {
             if (facing == BlockFacing.DOWN)
@@ -210,20 +215,21 @@ internal sealed class RainWindowField : EmitterField
                 continue;  // rain does not land on a pane from below
             }
 
-            neighbour.Set(pos.X + facing.Normali.X, pos.Y + facing.Normali.Y, pos.Z + facing.Normali.Z);
-            Block block = blocks.GetBlock(neighbour);
-            if (block == null || IsSolid(block))
+            for (int step = 1; step <= OutwardReach; step++)
             {
-                continue;  // walled in on this side
-            }
+                probe.Set(pos.X + (facing.Normali.X * step), pos.Y + (facing.Normali.Y * step), pos.Z + (facing.Normali.Z * step));
+                Block block = blocks.GetBlock(probe);
+                if (block == null || IsSolid(block))
+                {
+                    break;  // walled in this way; try another face
+                }
 
-            if (blocks.GetRainMapHeightAt(neighbour.X, neighbour.Z) > neighbour.Y)
-            {
-                continue;  // roofed over: no sky, no rain, and never the inside of a room
+                if (blocks.GetRainMapHeightAt(probe.X, probe.Z) <= probe.Y)
+                {
+                    side = facing;
+                    return true;  // open sky out this way: the weather is on this side
+                }
             }
-
-            side = facing;
-            return true;
         }
 
         return false;

@@ -49,6 +49,7 @@ public sealed class SurroundWeatherModSystem : ModSystem
         RegisterCommands(api);
         AmbientSoundPlacementPatch.Initialize(api);
         RainWindowSuppressor.TryPatch(harmony, Mod.Logger);
+        VanillaWindowSoundStripper.TryPatch(harmony, Mod.Logger);
         ApplyRuntimeConfig();
     }
 
