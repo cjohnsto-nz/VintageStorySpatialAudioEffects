@@ -136,7 +136,7 @@ internal sealed class RainEmitterField : EmitterField
         });
     }
 
-    protected override float VolumeOf(int variant, int kind, float intensity)
+    protected override float VolumeOf(int variant, in EmitterCell cell, float intensity)
     {
         if (variant == Splash)
         {

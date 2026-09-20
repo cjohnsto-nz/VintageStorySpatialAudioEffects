@@ -27,6 +27,13 @@ internal static class WeatherBedOverrides
         new("game:sounds/weather/tracks/verylowtremble.ogg")
     };
 
+    /// <summary>Vanilla's wind beds, which the wind emitters replace.</summary>
+    private static readonly AssetLocation[] WindBeds =
+    {
+        new("game:sounds/weather/wind-leafless.ogg"),
+        new("game:sounds/weather/wind-leafy.ogg")
+    };
+
     private static readonly (AssetLocation Target, AssetLocation Replacement)[] SurroundReplacements =
     {
         (new AssetLocation("game:sounds/weather/tracks/rain-leafless.ogg"), new AssetLocation("surroundweather:sounds/weather/tracks/rain-surround-new.ogg")),
@@ -42,19 +49,21 @@ internal static class WeatherBedOverrides
     private static readonly List<AssetLocation> AppliedTargets = new();
     private static bool appliedSurround;
     private static bool appliedSilence;
+    private static bool appliedWindSilence;
     private static bool applied;
 
     /// <param name="surroundBeds">Play the 5.1 recordings instead of vanilla's weather tracks.</param>
     /// <param name="silenceRainBeds">Silence the rain beds: the surface emitters are the rain now.</param>
-    public static void Apply(ICoreClientAPI api, ILogger logger, bool surroundBeds, bool silenceRainBeds)
+    /// <param name="silenceWindBeds">Silence the wind beds: the wind emitters are the wind now.</param>
+    public static void Apply(ICoreClientAPI api, ILogger logger, bool surroundBeds, bool silenceRainBeds, bool silenceWindBeds)
     {
-        if (applied && appliedSurround == surroundBeds && appliedSilence == silenceRainBeds)
+        if (applied && appliedSurround == surroundBeds && appliedSilence == silenceRainBeds && appliedWindSilence == silenceWindBeds)
         {
             return;
         }
 
         Restore(logger);
-        if (!surroundBeds && !silenceRainBeds)
+        if (!surroundBeds && !silenceRainBeds && !silenceWindBeds)
         {
             return;
         }
@@ -75,6 +84,15 @@ internal static class WeatherBedOverrides
             }
         }
 
+        if (silenceWindBeds)
+        {
+            foreach (AssetLocation target in WindBeds)
+            {
+                TryRegister(api, logger, target, Silence);
+            }
+        }
+
+        appliedWindSilence = silenceWindBeds;
         appliedSurround = surroundBeds;
         appliedSilence = silenceRainBeds;
         applied = true;

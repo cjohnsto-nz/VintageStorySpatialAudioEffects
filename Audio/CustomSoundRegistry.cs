@@ -31,6 +31,11 @@ internal static class CustomSoundRegistry
     /// <summary>Rain in the leaves, for emitters that land on a canopy.</summary>
     public static readonly AssetLocation[] RainCanopyLoops = Loops("rain-canopy-1", "rain-canopy-2", "rain-canopy-3");
 
+    /// <summary>Wind through leaves, and through bare country: slices of the wind beds' channels.</summary>
+    public static readonly AssetLocation[] WindLeafySlices = Loops("wind-leafy-1", "wind-leafy-2", "wind-leafy-3", "wind-leafy-4");
+
+    public static readonly AssetLocation[] WindLeaflessSlices = Loops("wind-leafless-1", "wind-leafless-2", "wind-leafless-3", "wind-leafless-4");
+
     private static readonly AssetLocation[] Aliases =
         new[]
         {
@@ -47,6 +52,8 @@ internal static class CustomSoundRegistry
         .Concat(RainMediumLoops)
         .Concat(RainHeavyLoops)
         .Concat(RainCanopyLoops)
+        .Concat(WindLeafySlices)
+        .Concat(WindLeaflessSlices)
         .ToArray();
 
     public static void Register(ICoreClientAPI api, ILogger logger)

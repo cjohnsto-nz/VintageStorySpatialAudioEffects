@@ -133,7 +133,7 @@ internal sealed class LeafRustleField : EmitterField
         });
     }
 
-    protected override float VolumeOf(int variant, int kind, float intensity)
+    protected override float VolumeOf(int variant, in EmitterCell cell, float intensity)
     {
         float volume = GameMath.Clamp(0.047f + (intensity * 0.048f), 0.036f, 0.15f);
         return GameMath.Clamp(volume * Math.Max(0f, Config.LeafRustleVolumeMultiplier), 0f, 0.24f);

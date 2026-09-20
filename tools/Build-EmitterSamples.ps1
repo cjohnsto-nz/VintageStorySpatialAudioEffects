@@ -42,6 +42,16 @@ $cuts = @(
     @{ Name = 'rain-canopy-1'; Source = 'rain-surround-canopy.ogg'; Channel = 'FL'; Start = 0.4 }
     @{ Name = 'rain-canopy-2'; Source = 'rain-surround-canopy.ogg'; Channel = 'BR'; Start = 3.2 }
     @{ Name = 'rain-canopy-3'; Source = 'rain-surround-canopy.ogg'; Channel = 'FC'; Start = 6.0 }
+
+    # Wind: longer slices, so a gust keeps its shape, and at the beds' own (louder) level.
+    @{ Name = 'wind-leafy-1';    Source = 'wind-surround-leafy2.ogg';    Channel = 'FL'; Start = 0.5;  Length = 10.0; Target = -24.0 }
+    @{ Name = 'wind-leafy-2';    Source = 'wind-surround-leafy2.ogg';    Channel = 'BR'; Start = 10.5; Length = 10.0; Target = -24.0 }
+    @{ Name = 'wind-leafy-3';    Source = 'wind-surround-leafy2.ogg';    Channel = 'FR'; Start = 5.5;  Length = 10.0; Target = -24.0 }
+    @{ Name = 'wind-leafy-4';    Source = 'wind-surround-leafy2.ogg';    Channel = 'BL'; Start = 3.0;  Length = 10.0; Target = -24.0 }
+    @{ Name = 'wind-leafless-1'; Source = 'wind-surround-leafless2.ogg'; Channel = 'FL'; Start = 0.5;  Length = 10.0; Target = -24.0 }
+    @{ Name = 'wind-leafless-2'; Source = 'wind-surround-leafless2.ogg'; Channel = 'BR'; Start = 5.5;  Length = 10.0; Target = -24.0 }
+    @{ Name = 'wind-leafless-3'; Source = 'wind-surround-leafless2.ogg'; Channel = 'FR'; Start = 3.0;  Length = 10.0; Target = -24.0 }
+    @{ Name = 'wind-leafless-4'; Source = 'wind-surround-leafless2.ogg'; Channel = 'BL'; Start = 1.5;  Length = 10.0; Target = -24.0 }
 )
 
 function Get-MeanVolumeDb([string]$path) {
@@ -51,8 +61,11 @@ function Get-MeanVolumeDb([string]$path) {
     [double]$line.Matches[0].Groups[1].Value
 }
 
-$window = $Length + $Crossfade
+$defaultLength = $Length
 foreach ($cut in $cuts) {
+    $Length = $cut.Length ?? $defaultLength
+    $target = $cut.Target ?? $TargetMeanDb
+    $window = $Length + $Crossfade
     $source = Join-Path $assets $cut.Source
     if (-not (Test-Path $source)) { throw "missing bed $source" }
     $temp = Join-Path ([System.IO.Path]::GetTempPath()) "$($cut.Name).wav"
@@ -71,7 +84,7 @@ foreach ($cut in $cuts) {
     ) -join ';'
 
     & ffmpeg -hide_banner -v error -y -ss $cut.Start -i $source -filter_complex $chain -map '[out]' -ar 44100 $temp
-    $gain = $TargetMeanDb - (Get-MeanVolumeDb $temp)
+    $gain = $target - (Get-MeanVolumeDb $temp)
     & ffmpeg -hide_banner -v error -y -i $temp -af "volume=$([math]::Round($gain, 2))dB" -c:a libvorbis -q:a 4 $out
     Remove-Item $temp -Force
     Write-Host ("{0,-14} {1,-26} {2,-3} {3,5:N1}s  {4,6:N1} dB  {5,6:N0} KB" -f `

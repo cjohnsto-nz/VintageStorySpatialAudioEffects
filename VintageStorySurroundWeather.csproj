@@ -160,6 +160,46 @@
       <Pack>true</Pack>
       <PackagePath>assets\surroundweather\sounds\weather\rain-canopy-3.ogg</PackagePath>
     </Content>
+    <Content Include="Audio\Assets\wind-leafy-1.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\wind-leafy-1.ogg</PackagePath>
+    </Content>
+    <Content Include="Audio\Assets\wind-leafy-2.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\wind-leafy-2.ogg</PackagePath>
+    </Content>
+    <Content Include="Audio\Assets\wind-leafy-3.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\wind-leafy-3.ogg</PackagePath>
+    </Content>
+    <Content Include="Audio\Assets\wind-leafy-4.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\wind-leafy-4.ogg</PackagePath>
+    </Content>
+    <Content Include="Audio\Assets\wind-leafless-1.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\wind-leafless-1.ogg</PackagePath>
+    </Content>
+    <Content Include="Audio\Assets\wind-leafless-2.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\wind-leafless-2.ogg</PackagePath>
+    </Content>
+    <Content Include="Audio\Assets\wind-leafless-3.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\wind-leafless-3.ogg</PackagePath>
+    </Content>
+    <Content Include="Audio\Assets\wind-leafless-4.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\wind-leafless-4.ogg</PackagePath>
+    </Content>
     <Content Include="Audio\Assets\silence.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>

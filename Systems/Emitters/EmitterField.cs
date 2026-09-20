@@ -117,7 +117,7 @@ internal abstract class EmitterField : IDisposable
     protected abstract ILoadedSound CreateSound(in EmitterCell cell, float intensity, out int variant);
 
     /// <summary>How loud an emitter in a near cell should be now (the cell's gain is applied on top).</summary>
-    protected abstract float VolumeOf(int variant, int kind, float intensity);
+    protected abstract float VolumeOf(int variant, in EmitterCell cell, float intensity);
 
     /// <summary>True when the weather has moved on from what this emitter plays: its cell takes a new slice.</summary>
     protected virtual bool IsStale(int variant, int kind, float intensity) => false;
@@ -260,7 +260,7 @@ internal abstract class EmitterField : IDisposable
                 continue;
             }
 
-            emitter.TargetVolume = GameMath.Clamp(VolumeOf(emitter.Variant, emitter.Cell.Kind, intensity) * emitter.Cell.Gain, 0f, 1f);
+            emitter.TargetVolume = GameMath.Clamp(VolumeOf(emitter.Variant, emitter.Cell, intensity) * emitter.Cell.Gain, 0f, 1f);
         }
 
         // Empty cells fill nearest first; then cells whose slice has run its life take the next
@@ -462,7 +462,7 @@ internal abstract class EmitterField : IDisposable
         var emitter = new Emitter(sound, cell)
         {
             Variant = variant,
-            TargetVolume = GameMath.Clamp(VolumeOf(variant, cell.Kind, intensity) * cell.Gain, 0f, 1f),
+            TargetVolume = GameMath.Clamp(VolumeOf(variant, cell, intensity) * cell.Gain, 0f, 1f),
             BornMs = nowMs,
             ExpiresMs = nowMs + (long)(lifetime * 1000.0),
         };

@@ -44,10 +44,21 @@ public sealed class SurroundWeatherConfig
     /// <summary>Scales the surface emitters' loudness.</summary>
     public float RainSurfaceEmitterVolume { get; set; } = 1f;
 
+    /// <summary>
+    /// Experimental: wind plays from the open ground around you, loudest from upwind, instead of
+    /// from a bed at your head. In a cave it comes from the mouth. The wind beds fall silent.
+    /// Takes effect when the world is next loaded.
+    /// </summary>
+    public bool ExperimentalWindEmitters { get; set; } = false;
+
+    /// <summary>Scales the wind emitters' loudness.</summary>
+    public float WindEmitterVolume { get; set; } = 1f;
+
     public bool EnableDebugTools { get; set; } = false;
     public bool ShowLeafRustleDebugVisuals { get; set; } = false;
     public bool ShowRainEmitterDebugVisuals { get; set; } = false;
     public bool ShowRainSurfaceEmitterDebugVisuals { get; set; } = false;
+    public bool ShowWindEmitterDebugVisuals { get; set; } = false;
 }
 
 internal static class SurroundWeatherConfigManager

@@ -73,7 +73,7 @@ public sealed class SurroundWeatherModSystem : ModSystem
     private void ApplyRuntimeConfig()
     {
         SurroundWeatherConfig config = SurroundWeatherConfigManager.Current;
-        WeatherBedOverrides.Apply(clientApi, Mod.Logger, config.ReplaceVanillaWeatherBeds, config.ExperimentalRainSurfaceEmitters);
+        WeatherBedOverrides.Apply(clientApi, Mod.Logger, config.ReplaceVanillaWeatherBeds, config.ExperimentalRainSurfaceEmitters, config.ExperimentalWindEmitters);
 
         // Every emitter is an EmitterField: they lead the listener, turn over steadily and fade alike.
         DisposeFields();
@@ -86,6 +86,12 @@ public sealed class SurroundWeatherModSystem : ModSystem
         {
             AddField(new RainEmitterField(clientApi, RainFieldProfile.SurfaceLoops), "rainsurface",
                 () => Config.EnableDebugTools && Config.ShowRainSurfaceEmitterDebugVisuals, unchecked((int)0xFF4DFFD2), 1f);
+        }
+
+        if (config.ExperimentalWindEmitters)
+        {
+            AddField(new WindEmitterField(clientApi), "wind",
+                () => Config.EnableDebugTools && Config.ShowWindEmitterDebugVisuals, unchecked((int)0xFFFFFFFF), 1f);
         }
 
         if (config.EnableRainEmitters)
