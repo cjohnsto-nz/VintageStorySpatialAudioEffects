@@ -634,6 +634,14 @@ internal abstract class EmitterField : IDisposable
         return blocked;
     }
 
+    /// <summary>
+    /// Space a sound can stand in. Thatch and leaves let the rain through, so they are not solid
+    /// to the weather and <see cref="IsSolid"/> passes them over - but they are still a block, and
+    /// an emitter inside one is a sound coming out of the roof.
+    /// </summary>
+    protected static bool IsOpenAir(Block block) =>
+        block != null && (block.Id == 0 || block.Replaceable >= 6000);
+
     protected static bool IsSolid(Block block) =>
         block != null
         && block.Id != 0

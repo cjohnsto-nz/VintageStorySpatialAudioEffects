@@ -28,6 +28,12 @@ internal static class CustomSoundRegistry
 
     public static readonly AssetLocation[] RainHeavyLoops = Loops("rain-heavy-1", "rain-heavy-2", "rain-heavy-3");
 
+    /// <summary>
+    /// Rain on glass: slices of vanilla's own rainwindow recording with the sub bass filtered out
+    /// (a pane has none, and through a wall the engine's muffling leaves only the rumble).
+    /// </summary>
+    public static readonly AssetLocation[] WindowLoops = Loops("rainwindow-1", "rainwindow-2", "rainwindow-3");
+
     /// <summary>Rain in the leaves, for emitters that land on a canopy.</summary>
     public static readonly AssetLocation[] RainCanopyLoops = Loops("rain-canopy-1", "rain-canopy-2", "rain-canopy-3");
 
@@ -52,6 +58,7 @@ internal static class CustomSoundRegistry
         .Concat(RainMediumLoops)
         .Concat(RainHeavyLoops)
         .Concat(RainCanopyLoops)
+        .Concat(WindowLoops)
         .Concat(WindLeafySlices)
         .Concat(WindLeaflessSlices)
         .ToArray();

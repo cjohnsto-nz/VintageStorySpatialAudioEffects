@@ -19,7 +19,9 @@ param(
     [double]$Length = 6.0,
     [double]$Crossfade = 0.5,
     # Average level every sample is matched to (dBFS), which is where the beds already sit.
-    [double]$TargetMeanDb = -44.0
+    [double]$TargetMeanDb = -44.0,
+    # The game's assets, for the rain-on-glass recording the window emitters play.
+    [string]$GameAssetDirectory = (Join-Path ($env:VINTAGE_STORY ?? (Join-Path $env:APPDATA 'Vintagestory')) 'assets')
 )
 
 $ErrorActionPreference = 'Stop'
@@ -89,4 +91,42 @@ foreach ($cut in $cuts) {
     Remove-Item $temp -Force
     Write-Host ("{0,-14} {1,-26} {2,-3} {3,5:N1}s  {4,6:N1} dB  {5,6:N0} KB" -f `
         $cut.Name, $cut.Source, $cut.Channel, $cut.Start, $gain, ((Get-Item $out).Length / 1KB))
+}
+
+# Rain on glass, for the window emitters: vanilla's own recording, high-passed.
+#
+# It is mostly rumble - the energy below 80 Hz is within 1.5 dB of the whole file - which a pane of
+# glass does not have, and which the audio engine's muffling through a wall leaves behind when it
+# takes the rest away. Two 2-pole stages at 200 Hz (24 dB/octave) take it out. Nothing is put back:
+# the samples come out about 7 dB quieter than the original, which is the rumble that left, and the
+# mod's own RainWindowVolume sets the loudness from there.
+$windowSource = Join-Path $GameAssetDirectory 'survival/sounds/environment/rainwindow.ogg'
+$windowCuts = @(
+    @{ Name = 'rainwindow-1'; Start = 0.5 }
+    @{ Name = 'rainwindow-2'; Start = 6.5 }
+    @{ Name = 'rainwindow-3'; Start = 12.5 }
+)
+
+if (-not (Test-Path $windowSource)) {
+    Write-Warning "No rain-on-glass recording at $windowSource; the window samples are left as they are."
+    return
+}
+
+$Length = $defaultLength
+$window = $Length + $Crossfade
+foreach ($cut in $windowCuts) {
+    $out = Join-Path $assets "$($cut.Name).ogg"
+    $chain = @(
+        "[0:a]atrim=0:$window,asetpts=N/SR/TB,highpass=f=200:poles=2,highpass=f=200:poles=2[m]"
+        "[m]asplit=3[a][b][c]"
+        "[a]atrim=0:$Crossfade,asetpts=N/SR/TB,afade=t=in:st=0:d=${Crossfade}:curve=qsin[head]"
+        "[b]atrim=${Crossfade}:$Length,asetpts=N/SR/TB[body]"
+        "[c]atrim=${Length}:$window,asetpts=N/SR/TB,afade=t=out:st=0:d=${Crossfade}:curve=qsin[tail]"
+        "[head][tail]amix=inputs=2:normalize=0[seam]"
+        "[seam][body]concat=n=2:v=0:a=1[out]"
+    ) -join ';'
+
+    & ffmpeg -hide_banner -v error -y -ss $cut.Start -i $windowSource -filter_complex $chain -map '[out]' -ar 44100 -c:a libvorbis -q:a 4 $out
+    Write-Host ("{0,-14} {1,-26} {2,-3} {3,5:N1}s  {4,6:N1} dB  {5,6:N0} KB" -f `
+        $cut.Name, 'rainwindow.ogg', 'hp', $cut.Start, (Get-MeanVolumeDb $out), ((Get-Item $out).Length / 1KB))
 }

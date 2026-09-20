@@ -60,6 +60,21 @@
       <Pack>true</Pack>
       <PackagePath>assets\surroundweather\sounds\weather\tracks\rain-surround-quiet.ogg</PackagePath>
     </Content>
+    <Content Include="Audio\Assets\rainwindow-1.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\rainwindow-1.ogg</PackagePath>
+    </Content>
+    <Content Include="Audio\Assets\rainwindow-2.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\rainwindow-2.ogg</PackagePath>
+    </Content>
+    <Content Include="Audio\Assets\rainwindow-3.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\rainwindow-3.ogg</PackagePath>
+    </Content>
     <Content Include="Audio\Assets\rain-mono-1.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>

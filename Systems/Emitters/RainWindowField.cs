@@ -30,9 +30,6 @@ internal sealed class RainWindowField : EmitterField
 
     public override string Name => "rain on windows";
 
-    /// <summary>Whatever the panes hereabouts play for rain, taken from the first one seen.</summary>
-    private AssetLocation windowSound;
-
     public RainWindowField(ICoreClientAPI capi)
         : base(capi)
     {
@@ -103,13 +100,10 @@ internal sealed class RainWindowField : EmitterField
                     }
 
                     pos.Set(x + dx, baseY + dy, z + dz);
-                    Block window = blocks.GetBlock(pos);
-                    if (!IsWindow(window) || !TryGetWeatherSide(blocks, pos, out BlockFacing side, out _, out _))
+                    if (!IsWindow(blocks.GetBlock(pos)) || !TryGetWeatherSide(blocks, pos, out BlockFacing side, out _, out _))
                     {
                         continue;
                     }
-
-                    windowSound = window.Sounds.Ambient;
 
                     best = distance;
                     px = pos.X + 0.5 + (side.Normali.X * OutsideOffset);
@@ -124,19 +118,14 @@ internal sealed class RainWindowField : EmitterField
 
     protected override ILoadedSound CreateSound(in EmitterCell cell, float intensity, out int variant)
     {
-        // The pane's own recording - vanilla's rain on glass - one slice at a time, from outside
-        // the glass instead of from a single point that follows the listener about. Every emitter
-        // starts somewhere else in it and is pitched a little apart, so a wall of them is rain
-        // rather than one sound played several times over.
+        // Vanilla's rain on glass, high-passed and cut into slices, played from outside each pane
+        // instead of from one point that follows the listener about. Every emitter takes a
+        // different slice, pitched a little apart, so a wall of them is rain rather than one sound
+        // played several times over.
         variant = 0;
-        if (windowSound == null)
-        {
-            return null;
-        }
-
         return capi.World.LoadSound(new SoundParams
         {
-            Location = windowSound,
+            Location = CustomSoundRegistry.WindowLoops[random.Next(CustomSoundRegistry.WindowLoops.Length)],
             Position = new Vec3f((float)cell.X, (float)cell.Y, (float)cell.Z),
             RelativePosition = false,
             Range = 12f,
@@ -210,10 +199,11 @@ internal sealed class RainWindowField : EmitterField
         block?.Sounds?.Ambient?.Path?.Contains(WindowSound, StringComparison.OrdinalIgnoreCase) == true;
 
     /// <summary>
-    /// The side of a pane the rain falls on: an open neighbour with clear sky straight above it.
-    /// Rain has to land on the glass to be heard through it, so an eave over that neighbour is
-    /// enough to keep the pane quiet, and the inside of a room - always under its own roof - can
-    /// never be chosen.
+    /// The side of a pane the rain falls on: empty space with clear sky straight above it. Rain
+    /// has to land on the glass to be heard through it, so an eave over that neighbour is enough
+    /// to keep the pane quiet, and the inside of a room - always under its own roof - can never be
+    /// chosen. Empty means empty: thatch beside a pane is rain-permeable, and so neither solid nor
+    /// roofed, but an emitter in it still sounds like rain inside the roof.
     /// <para>
     /// <paramref name="coveredSide"/> and <paramref name="skyStepsOut"/> are for the status
     /// command only: the nearest face that is open air but roofed over, and how far out along it
@@ -237,10 +227,9 @@ internal sealed class RainWindowField : EmitterField
             for (int step = 1; step <= OutwardReach; step++)
             {
                 probe.Set(pos.X + (facing.Normali.X * step), pos.Y + (facing.Normali.Y * step), pos.Z + (facing.Normali.Z * step));
-                Block block = blocks.GetBlock(probe);
-                if (block == null || IsSolid(block))
+                if (!IsOpenAir(blocks.GetBlock(probe)))
                 {
-                    break;  // walled in this way; try another face
+                    break;  // a block is there, if only thatch; nothing can stand in it
                 }
 
                 if (blocks.GetRainMapHeightAt(probe.X, probe.Z) > probe.Y)
