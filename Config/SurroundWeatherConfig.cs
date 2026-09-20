@@ -77,7 +77,7 @@ public sealed class SurroundWeatherConfig
     public bool ExperimentalWaterWaveEmitters { get; set; } = true;
 
     /// <summary>How loud the water lapping at a shore is; open water is quieter than this.</summary>
-    public float WaterWaveVolume { get; set; } = 0.35f;
+    public float WaterWaveVolume { get; set; } = 0.75f;
 
     /// <summary>How far out (blocks) the water is given emitters.</summary>
     public float WaterWaveRadius { get; set; } = 24f;
@@ -95,7 +95,7 @@ public sealed class SurroundWeatherConfig
     public bool ExperimentalFlowingWaterEmitters { get; set; } = true;
 
     /// <summary>How loud a fall is; rapids and a creek are quieter than this.</summary>
-    public float FlowingWaterVolume { get; set; } = 0.4f;
+    public float FlowingWaterVolume { get; set; } = 0.85f;
 
     /// <summary>How far out (blocks) running water is given emitters.</summary>
     public float FlowingWaterRadius { get; set; } = 20f;

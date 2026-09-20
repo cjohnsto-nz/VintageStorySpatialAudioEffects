@@ -263,7 +263,7 @@
     {
       "code": "WaterWaveVolume",
       "type": "float",
-      "default": 0.35,
+      "default": 0.75,
       "clientSide": true,
       "ingui": "Water volume",
       "comment": "How loud the water lapping at a shore is; open water is quieter than this.",
@@ -323,7 +323,7 @@
     {
       "code": "FlowingWaterVolume",
       "type": "float",
-      "default": 0.4,
+      "default": 0.85,
       "clientSide": true,
       "ingui": "Creek and fall volume",
       "comment": "How loud a fall is; rapids and a creek are quieter than this.",
