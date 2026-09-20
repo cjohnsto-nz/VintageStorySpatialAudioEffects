@@ -26,6 +26,8 @@ public sealed class SurroundWeatherModSystem : ModSystem
     private LeafRustleDebugRenderer leafRustleDebugRenderer;
     private RainEmitterSystem rainEmitterSystem;
     private RainEmitterDebugRenderer rainEmitterDebugRenderer;
+    private RainSurfaceEmitterSystem rainSurfaceEmitterSystem;
+    private RainSurfaceEmitterDebugRenderer rainSurfaceEmitterDebugRenderer;
 
     public override bool ShouldLoad(EnumAppSide forSide) => forSide == EnumAppSide.Client;
 
@@ -75,14 +77,7 @@ public sealed class SurroundWeatherModSystem : ModSystem
     private void ApplyRuntimeConfig()
     {
         SurroundWeatherConfig config = SurroundWeatherConfigManager.Current;
-        if (config.ReplaceVanillaWeatherBeds)
-        {
-            WeatherBedOverrides.Apply(clientApi, Mod.Logger);
-        }
-        else
-        {
-            WeatherBedOverrides.Restore(Mod.Logger);
-        }
+        WeatherBedOverrides.Apply(clientApi, Mod.Logger, config.ReplaceVanillaWeatherBeds, config.ExperimentalRainSurfaceEmitters);
 
         DisposeLeafRustleRuntime();
         DisposeRainRuntime();
@@ -92,6 +87,16 @@ public sealed class SurroundWeatherModSystem : ModSystem
             leafRustleEmitterSystem = new LeafRustleEmitterSystem(clientApi);
             leafRustleDebugRenderer = new LeafRustleDebugRenderer(clientApi, leafRustleEmitterSystem);
             clientApi.Event.RegisterRenderer(leafRustleDebugRenderer, EnumRenderStage.Opaque, "surroundweather-leafdebug");
+        }
+
+        if (config.ExperimentalRainSurfaceEmitters)
+        {
+            rainSurfaceEmitterSystem = new RainSurfaceEmitterSystem(clientApi);
+            if (config.EnableDebugTools && config.ShowRainSurfaceEmitterDebugVisuals)
+            {
+                rainSurfaceEmitterDebugRenderer = new RainSurfaceEmitterDebugRenderer(clientApi, rainSurfaceEmitterSystem);
+                clientApi.Event.RegisterRenderer(rainSurfaceEmitterDebugRenderer, EnumRenderStage.Opaque, "surroundweather-rainsurfacedebug");
+            }
         }
 
         if (config.EnableRainEmitters)
@@ -120,6 +125,16 @@ public sealed class SurroundWeatherModSystem : ModSystem
 
     private void DisposeRainRuntime()
     {
+        if (rainSurfaceEmitterDebugRenderer != null)
+        {
+            clientApi?.Event.UnregisterRenderer(rainSurfaceEmitterDebugRenderer, EnumRenderStage.Opaque);
+            rainSurfaceEmitterDebugRenderer.Dispose();
+            rainSurfaceEmitterDebugRenderer = null;
+        }
+
+        rainSurfaceEmitterSystem?.Dispose();
+        rainSurfaceEmitterSystem = null;
+
         if (rainEmitterDebugRenderer != null)
         {
             clientApi?.Event.UnregisterRenderer(rainEmitterDebugRenderer, EnumRenderStage.Opaque);

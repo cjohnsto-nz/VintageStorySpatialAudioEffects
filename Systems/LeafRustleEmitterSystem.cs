@@ -213,8 +213,7 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
             return;
         }
 
-        float roomLoss = GetRoomVolumePitchLoss(playerEntity.Pos.AsBlockPos);
-        TryEmitFromCache(playerEntity.Pos, facing, windExposure, roomLoss, nowMs);
+        TryEmitFromCache(playerEntity.Pos, facing, windExposure, nowMs);
     }
 
     private bool ShouldRefreshDiscovery(Vec3d playerPos, FacingContext facing, float windExposure, long nowMs)
@@ -418,7 +417,7 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
         hasDiscoveryCenter = true;
     }
 
-    private bool TryEmitFromCache(EntityPos playerPos, FacingContext facing, float windExposure, float roomLoss, long nowMs)
+    private bool TryEmitFromCache(EntityPos playerPos, FacingContext facing, float windExposure, long nowMs)
     {
         if (immediateCandidates.Count == 0 && nearCandidates.Count == 0 && midCandidates.Count == 0 && farCandidates.Count == 0)
         {
@@ -442,14 +441,14 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
         var activeCounts = GetActiveCountsByRing(nowMs);
         int immediateCapacity = Math.Max(0, MaxActiveEmittersPerPool - activeCounts[LeafRustleEmitterRing.Immediate]);
         int immediateTarget = Math.Min(immediateCandidates.Count, Math.Min(Math.Min(slotsRemaining, immediateCapacity), Math.Min(emitBudget - emitted, 1)));
-        emitted += EmitDistributedFromPool(immediateCandidates, immediateTarget, playerPos, facing, nowMs, windExposure, roomLoss, cachedLeafFactor, usedKeys, LeafRustleEmitterRing.Immediate);
+        emitted += EmitDistributedFromPool(immediateCandidates, immediateTarget, playerPos, facing, nowMs, windExposure, cachedLeafFactor, usedKeys, LeafRustleEmitterRing.Immediate);
         slotsRemaining = Math.Max(0, MaxActiveLeafEmitters - activeLeafEmitters.Count);
 
         if (slotsRemaining > 0 && emitted < emitBudget)
         {
             int nearCapacity = Math.Max(0, MaxActiveEmittersPerPool - activeCounts[LeafRustleEmitterRing.Near]);
             int nearTarget = Math.Min(Math.Min(slotsRemaining, nearCapacity), Math.Min(emitBudget - emitted, 1));
-            emitted += EmitDistributedFromPool(nearCandidates, nearTarget, playerPos, facing, nowMs, windExposure, roomLoss, cachedLeafFactor, usedKeys, LeafRustleEmitterRing.Near);
+            emitted += EmitDistributedFromPool(nearCandidates, nearTarget, playerPos, facing, nowMs, windExposure, cachedLeafFactor, usedKeys, LeafRustleEmitterRing.Near);
             slotsRemaining = Math.Max(0, MaxActiveLeafEmitters - activeLeafEmitters.Count);
         }
 
@@ -457,7 +456,7 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
         {
             int midCapacity = Math.Max(0, MaxActiveEmittersPerPool - activeCounts[LeafRustleEmitterRing.Mid]);
             int midTarget = Math.Min(Math.Min(slotsRemaining, midCapacity), Math.Min(emitBudget - emitted, 1));
-            emitted += EmitDistributedFromPool(midCandidates, midTarget, playerPos, facing, nowMs, windExposure, roomLoss, cachedLeafFactor, usedKeys, LeafRustleEmitterRing.Mid);
+            emitted += EmitDistributedFromPool(midCandidates, midTarget, playerPos, facing, nowMs, windExposure, cachedLeafFactor, usedKeys, LeafRustleEmitterRing.Mid);
             slotsRemaining = Math.Max(0, MaxActiveLeafEmitters - activeLeafEmitters.Count);
         }
 
@@ -465,7 +464,7 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
         {
             int farCapacity = Math.Max(0, MaxActiveEmittersPerPool - activeCounts[LeafRustleEmitterRing.Far]);
             int farTarget = Math.Min(Math.Min(slotsRemaining, farCapacity), emitBudget - emitted);
-            emitted += EmitDistributedFromPool(farCandidates, farTarget, playerPos, facing, nowMs, windExposure, roomLoss, cachedLeafFactor, usedKeys, LeafRustleEmitterRing.Far);
+            emitted += EmitDistributedFromPool(farCandidates, farTarget, playerPos, facing, nowMs, windExposure, cachedLeafFactor, usedKeys, LeafRustleEmitterRing.Far);
         }
 
         return emitted > 0;
@@ -492,7 +491,7 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
         return available;
     }
 
-    private int EmitDistributedFromPool(List<CandidateLeafBlock> sourcePool, int targetCount, EntityPos playerPos, FacingContext facing, long nowMs, float windExposure, float roomLoss, float leafFactor, HashSet<long> usedKeys, LeafRustleEmitterRing ring)
+    private int EmitDistributedFromPool(List<CandidateLeafBlock> sourcePool, int targetCount, EntityPos playerPos, FacingContext facing, long nowMs, float windExposure, float leafFactor, HashSet<long> usedKeys, LeafRustleEmitterRing ring)
     {
         if (targetCount <= 0 || sourcePool.Count == 0)
         {
@@ -538,7 +537,7 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
 
             CandidateLeafBlock candidate = bucket[random.Next(bucket.Count)];
             bucket.Remove(candidate);
-            if (TryEmitSpecific(candidate, nowMs, windExposure, roomLoss, leafFactor, usedKeys, ring))
+            if (TryEmitSpecific(candidate, nowMs, windExposure, leafFactor, usedKeys, ring))
             {
                 emitted++;
             }
@@ -601,7 +600,7 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
         return buckets;
     }
 
-    private bool TryEmitSpecific(CandidateLeafBlock candidate, long nowMs, float windExposure, float roomLoss, float leafFactor, HashSet<long> usedKeys, LeafRustleEmitterRing ring)
+    private bool TryEmitSpecific(CandidateLeafBlock candidate, long nowMs, float windExposure, float leafFactor, HashSet<long> usedKeys, LeafRustleEmitterRing ring)
     {
         long key = ToKey(candidate.Pos.X, candidate.Pos.Y, candidate.Pos.Z);
         if (!usedKeys.Add(key))
@@ -618,7 +617,7 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
         }
 
         recentLeafTriggers[key] = nowMs;
-        if (!PlayEmitterAt(key, sx, sy, sz, candidate.IsReedLike, windExposure, roomLoss, leafFactor, ring, nowMs))
+        if (!PlayEmitterAt(key, sx, sy, sz, candidate.IsReedLike, windExposure, leafFactor, ring, nowMs))
         {
             return false;
         }
@@ -645,7 +644,7 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
         return false;
     }
 
-    private bool PlayEmitterAt(long key, double sx, double sy, double sz, bool isReedLike, float windExposure, float roomLoss, float leafFactor, LeafRustleEmitterRing ring, long nowMs)
+    private bool PlayEmitterAt(long key, double sx, double sy, double sz, bool isReedLike, float windExposure, float leafFactor, LeafRustleEmitterRing ring, long nowMs)
     {
         CleanupLeafVoiceTracking(nowMs);
         if (activeLeafVoices.Count >= MaxConcurrentLeafVoices)
@@ -657,7 +656,6 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
         float baseVolume = GameMath.Clamp(0.036f + (windExposure * 0.048f) + (leafFactor * 0.022f), 0.036f, 0.15f);
         float volumeMultiplier = GameMath.Max(0f, SurroundWeatherConfigManager.Current.LeafRustleVolumeMultiplier);
         float volume = GameMath.Clamp(baseVolume * volumeMultiplier, 0.036f, 0.24f);
-        volume *= (1f - roomLoss);
         if (volume <= 0.003f)
         {
             return false;
@@ -668,7 +666,6 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
         float pitch = isReedLike
             ? GameMath.Clamp(0.67f + (centeredRandom * 0.17f * pitchVariationMultiplier) + ((windExposure - 0.5f) * 0.07f), 0.4f, 0.98f)
             : GameMath.Clamp(1f + (centeredRandom * 0.28f * pitchVariationMultiplier) + ((windExposure - 0.5f) * 0.12f), 0.6f, 1.42f);
-        pitch = GameMath.Max(0f, pitch - (roomLoss / 4f));
 
         // Loaded rather than played, to keep the handle: a rustle that falls behind fades out.
         ILoadedSound loaded = capi.World.LoadSound(new SoundParams
@@ -929,18 +926,6 @@ internal sealed class LeafRustleEmitterSystem : IDisposable
 
         double horizontalWind = Math.Sqrt((wind.X * wind.X) + (wind.Z * wind.Z));
         return GameMath.Clamp((float)(horizontalWind / 2.5), 0f, 1f);
-    }
-
-    private float GetRoomVolumePitchLoss(BlockPos pos)
-    {
-        IBlockAccessor blockAccessor = capi.World?.BlockAccessor;
-        if (blockAccessor == null)
-        {
-            return 0f;
-        }
-
-        int distanceToRainFall = blockAccessor.GetDistanceToRainFall(pos, 12, 4);
-        return GameMath.Clamp((float)Math.Pow(Math.Max(0f, (distanceToRainFall - 2f) / 10f), 2.0), 0f, 1f);
     }
 
     private AssetLocation ChooseRustleAlias(float windExposure)

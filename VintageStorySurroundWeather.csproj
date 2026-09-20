@@ -100,6 +100,11 @@
       <Pack>true</Pack>
       <PackagePath>assets\surroundweather\sounds\weather\lightning-distant.ogg</PackagePath>
     </Content>
+    <Content Include="Audio\Assets\silence.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>assets\surroundweather\sounds\weather\silence.ogg</PackagePath>
+    </Content>
     <Content Include="Audio\Assets\hail.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>

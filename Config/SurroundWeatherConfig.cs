@@ -21,9 +21,27 @@ public sealed class SurroundWeatherConfig
     /// <summary>Rain landing on the ground around you, from where it lands.</summary>
     public bool EnableRainEmitters { get; set; } = true;
 
+    /// <summary>
+    /// Experimental: rain plays from the surfaces it lands on (ground, roofs, canopies) instead of
+    /// from a bed at your head. The rain beds fall silent; wind and hail keep theirs. Nothing is
+    /// muffled for being indoors: the emitters are simply where the rain is, and the audio engine
+    /// muffles what is behind a wall or roof. Takes effect when the world is next loaded.
+    /// </summary>
+    public bool ExperimentalRainSurfaceEmitters { get; set; } = false;
+
+    /// <summary>Rain emitters around you at full rain (fewer in light rain).</summary>
+    public int RainSurfaceEmitterCount { get; set; } = 12;
+
+    /// <summary>How far out (blocks) the surface emitters are placed.</summary>
+    public float RainSurfaceEmitterRadius { get; set; } = 18f;
+
+    /// <summary>Scales the surface emitters' loudness.</summary>
+    public float RainSurfaceEmitterVolume { get; set; } = 1f;
+
     public bool EnableDebugTools { get; set; } = false;
     public bool ShowLeafRustleDebugVisuals { get; set; } = false;
     public bool ShowRainEmitterDebugVisuals { get; set; } = false;
+    public bool ShowRainSurfaceEmitterDebugVisuals { get; set; } = false;
 }
 
 internal static class SurroundWeatherConfigManager

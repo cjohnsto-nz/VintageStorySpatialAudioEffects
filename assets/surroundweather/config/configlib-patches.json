@@ -93,6 +93,65 @@
     },
     {
       "type": "separator",
+      "title": "Experimental: rain from surfaces"
+    },
+    {
+      "code": "ExperimentalRainSurfaceEmitters",
+      "type": "boolean",
+      "default": false,
+      "clientSide": true,
+      "ingui": "Rain from surfaces (experimental)",
+      "comment": "Rain plays from the ground, roofs and canopies it lands on instead of a bed at your head. Takes effect when the world is next loaded."
+    },
+    {
+      "code": "RainSurfaceEmitterCount",
+      "type": "integer",
+      "default": 12,
+      "clientSide": true,
+      "ingui": "Rain emitters",
+      "comment": "Rain emitters around you at full rain.",
+      "range": {
+        "min": 2,
+        "max": 32,
+        "step": 1
+      }
+    },
+    {
+      "code": "RainSurfaceEmitterRadius",
+      "type": "float",
+      "default": 18.0,
+      "clientSide": true,
+      "ingui": "Rain emitter radius",
+      "comment": "How far out (blocks) the rain emitters are placed.",
+      "range": {
+        "min": 6.0,
+        "max": 48.0,
+        "step": 1.0
+      }
+    },
+    {
+      "code": "RainSurfaceEmitterVolume",
+      "type": "float",
+      "default": 1.0,
+      "clientSide": true,
+      "ingui": "Rain emitter volume",
+      "comment": "Scales the rain emitters' loudness.",
+      "range": {
+        "min": 0.0,
+        "max": 3.0,
+        "step": 0.05
+      }
+    },
+    {
+      "code": "ShowRainSurfaceEmitterDebugVisuals",
+      "type": "boolean",
+      "default": false,
+      "clientSide": true,
+      "ingui": "Show rain surface emitter visuals",
+      "comment": "Draw the rain emitters when debug tools are enabled."
+    },
+    {
+      "type": "separator",
       "title": "Debug"
     },
     {

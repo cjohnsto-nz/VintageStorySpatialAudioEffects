@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
@@ -141,14 +140,13 @@ internal sealed class RainEmitterSystem : IDisposable
         Cleanup(nowMs);
         CullOutOfRangeEmitters(playerEntity.Pos, nowMs);
 
-        if (!IsRainActive(out _))
+        if (!WeatherState.TryGetRainfall(capi, out _))
         {
             ClearCandidateCache();
             return;
         }
 
         Vec3d playerPos = playerEntity.Pos.XYZ;
-        float roomLoss = GetRoomVolumePitchLoss(playerEntity.Pos.AsBlockPos);
         if (ShouldRefreshCandidates(playerPos, nowMs))
         {
             RefreshCandidates(playerEntity.Pos, nowMs);
@@ -180,7 +178,7 @@ internal sealed class RainEmitterSystem : IDisposable
             }
 
             RainCandidate chosen = PickCandidateForSlot(candidates, quadrant, slotIndex);
-            PlayEmitter(chosen, quadrant, slotIndex, nowMs, roomLoss);
+            PlayEmitter(chosen, quadrant, slotIndex, nowMs);
             slotNextSpawnMs[slotIndex] = nowMs + SlotSpawnIntervalMs + random.Next(200, 900);
             spawnedThisTick++;
         }
@@ -302,19 +300,13 @@ internal sealed class RainEmitterSystem : IDisposable
         return candidates[index];
     }
 
-    private void PlayEmitter(RainCandidate candidate, RainEmitterQuadrant quadrant, int slotIndex, long nowMs, float roomLoss)
+    private void PlayEmitter(RainCandidate candidate, RainEmitterQuadrant quadrant, int slotIndex, long nowMs)
     {
+        // No muffling for being indoors: the candidates are places rain actually falls, and the
+        // audio engine muffles the ones behind a wall or roof.
         AssetLocation alias = RainAliases[random.Next(RainAliases.Length)];
-        float adjustedVolume = GameMath.Clamp(Volume * (1f - roomLoss), 0f, Volume);
-        if (adjustedVolume <= 0.01f)
-        {
-            activeEmitters.Remove(slotIndex);
-            return;
-        }
-
         float pitch = GameMath.Clamp((float)(0.9 + (random.NextDouble() * 0.16)), 0.88f, 1.08f);
-        pitch = GameMath.Max(0f, pitch - (roomLoss / 4f));
-        capi.World.PlaySoundAt(alias, candidate.X, candidate.Y, candidate.Z, null, EnumSoundType.Ambient, pitch, PlaybackRange, adjustedVolume);
+        capi.World.PlaySoundAt(alias, candidate.X, candidate.Y, candidate.Z, null, EnumSoundType.Ambient, pitch, PlaybackRange, Volume);
         activeEmitters[slotIndex] = new ActiveRainEmitterState(nowMs + EmitterLifetimeMs, candidate.X, candidate.Y, candidate.Z, quadrant);
 
         if (SurroundWeatherConfigManager.Current.EnableDebugTools && SurroundWeatherConfigManager.Current.ShowRainEmitterDebugVisuals)
@@ -379,76 +371,6 @@ internal sealed class RainEmitterSystem : IDisposable
             activeEmitters.Remove(slotIndex);
             slotNextSpawnMs[slotIndex] = nowMs + random.Next(120, 420);
         }
-    }
-
-    private float GetRoomVolumePitchLoss(BlockPos pos)
-    {
-        IBlockAccessor blockAccessor = capi.World?.BlockAccessor;
-        if (blockAccessor == null)
-        {
-            return 0f;
-        }
-
-        int distanceToRainFall = blockAccessor.GetDistanceToRainFall(pos, 12, 4);
-        return GameMath.Clamp((float)Math.Pow(Math.Max(0f, (distanceToRainFall - 2f) / 10f), 2.0), 0f, 1f);
-    }
-
-    private bool IsRainActive(out float rainfall)
-    {
-        rainfall = 0f;
-
-        ModSystem weatherSystem = capi.ModLoader?.GetModSystem("Vintagestory.GameContent.WeatherSystemClient");
-        if (weatherSystem == null)
-        {
-            return false;
-        }
-
-        object climate = weatherSystem.GetType().GetField("clientClimateCond", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(weatherSystem);
-        if (climate == null)
-        {
-            return false;
-        }
-
-        rainfall = ReadFloatMember(climate, "Rainfall");
-        if (rainfall <= 0.02f)
-        {
-            return false;
-        }
-
-        float temperature = ReadFloatMember(climate, "Temperature");
-        object blendedWeatherData = weatherSystem.GetType().GetProperty("BlendedWeatherData", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(weatherSystem);
-        if (blendedWeatherData == null)
-        {
-            return false;
-        }
-
-        string precipitationType = ReadMember(blendedWeatherData, "BlendedPrecType")?.ToString() ?? string.Empty;
-        float snowThresholdTemp = ReadFloatMember(blendedWeatherData, "snowThresholdTemp");
-        if (precipitationType.Equals("Auto", StringComparison.OrdinalIgnoreCase))
-        {
-            precipitationType = temperature < snowThresholdTemp ? "Snow" : "Rain";
-        }
-
-        return precipitationType.Equals("Rain", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static object ReadMember(object target, string memberName)
-    {
-        Type type = target.GetType();
-        PropertyInfo property = type.GetProperty(memberName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-        if (property != null)
-        {
-            return property.GetValue(target);
-        }
-
-        FieldInfo field = type.GetField(memberName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-        return field?.GetValue(target);
-    }
-
-    private static float ReadFloatMember(object target, string memberName)
-    {
-        object value = ReadMember(target, memberName);
-        return value is float floatValue ? floatValue : 0f;
     }
 
     private static RainEmitterQuadrant GetQuadrantForSlot(int slotIndex)
