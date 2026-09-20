@@ -289,7 +289,7 @@
     {
       "code": "WaterWaveCount",
       "type": "integer",
-      "default": 16,
+      "default": 8,
       "clientSide": true,
       "ingui": "Water emitter count",
       "comment": "The most water emitters at once; the nearest water wins.",
@@ -297,6 +297,19 @@
         "min": 1,
         "max": 64,
         "step": 1
+      }
+    },
+    {
+      "code": "WaterWaveSpacing",
+      "type": "float",
+      "default": 8.0,
+      "clientSide": true,
+      "ingui": "Water emitter spacing",
+      "comment": "Blocks between water emitters around the listener; they thin out further off.",
+      "range": {
+        "min": 2.0,
+        "max": 24.0,
+        "step": 1.0
       }
     },
     {

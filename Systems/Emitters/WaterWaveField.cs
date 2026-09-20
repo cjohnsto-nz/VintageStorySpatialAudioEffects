@@ -45,11 +45,15 @@ internal sealed class WaterWaveField : EmitterField
     /// <summary>Whatever the water hereabouts plays, taken from the first block seen.</summary>
     private AssetLocation waveSound;
 
-    protected override double NearSpacing => 4.0;
+    /// <summary>
+    /// Water is a broad, even thing: a few emitters well apart read as a lake, where many close
+    /// together read as a wall of water standing around the listener.
+    /// </summary>
+    protected override double NearSpacing => Math.Max(2.0, Config.WaterWaveSpacing);
 
     protected override double Radius => Math.Max(8.0, Config.WaterWaveRadius);
 
-    protected override double MinRadius => 1.5;
+    protected override double MinRadius => 3.0;
 
     /// <summary>Waves are slow; a slice wants to be long enough to be one.</summary>
     protected override double LifetimeSeconds => 6.0;

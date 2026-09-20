@@ -83,7 +83,10 @@ public sealed class SurroundWeatherConfig
     public float WaterWaveRadius { get; set; } = 24f;
 
     /// <summary>The most water emitters at once; the nearest water wins.</summary>
-    public int WaterWaveCount { get; set; } = 16;
+    public int WaterWaveCount { get; set; } = 8;
+
+    /// <summary>Blocks between water emitters around the listener; they thin out further off.</summary>
+    public float WaterWaveSpacing { get; set; } = 8f;
 
     /// <summary>
     /// Play a block's ambient sound (a beehive, a translocator) from the nearest block that makes it, rather
