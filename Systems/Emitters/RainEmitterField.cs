@@ -10,7 +10,7 @@ namespace SurroundWeather;
 /// <summary>What a rain field plays.</summary>
 internal enum RainFieldProfile
 {
-    /// <summary>Experimental: looping rain on every surface, in place of the rain beds.</summary>
+    /// <summary>Experimental: short slices of rain on every surface, in place of the rain beds.</summary>
     SurfaceLoops,
 
     /// <summary>Sparse one-shot splashes further out, on top of whatever bed plays.</summary>
@@ -65,13 +65,13 @@ internal sealed class RainEmitterField : EmitterField
 
     protected override double Radius => Loops ? Config.RainSurfaceEmitterRadius : 18.0;
 
-    protected override double MinRadius => Loops ? 2.0 : 7.5;
+    protected override double MinRadius => Loops ? 1.5 : 7.5;
 
     protected override double Spacing => Loops ? Config.RainSurfaceEmitterSpacing : 4.0;
 
     protected override double LifetimeSeconds => Loops ? Config.RainSurfaceEmitterLifetimeSeconds : 6.0;
 
-    /// <summary>Loops enter anywhere in their length; a splash starts at its start.</summary>
+    /// <summary>A slice of steady rain starts anywhere; a splash starts at its start.</summary>
     protected override float RandomStartFraction => Loops ? 1f : 0f;
 
     protected override bool TryGetIntensity(Entity player, out float intensity)
@@ -160,7 +160,7 @@ internal sealed class RainEmitterField : EmitterField
             SoundType = Loops ? EnumSoundType.Weather : EnumSoundType.Ambient,
             Pitch = pitch,
             Volume = 0f,
-            ShouldLoop = Loops,
+            ShouldLoop = false,
             DisposeOnFinish = false,
         });
     }

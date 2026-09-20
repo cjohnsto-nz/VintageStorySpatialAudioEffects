@@ -52,8 +52,11 @@ internal abstract class EmitterField : IDisposable
     /// <summary>Blocks per second above which the listener counts as travelling.</summary>
     private const double MovingSpeed = 0.5;
     private const double VelocitySmoothingSeconds = 0.4;
-    /// <summary>Solid blocks in the way that a spot may still be played through.</summary>
-    protected const int BlockedLimit = 2;
+    /// <summary>
+    /// Solid blocks in the way that a spot may still be played through. A roof and its rafters
+    /// are a few; the depth of a cave is many more. The audio engine muffles what is played.
+    /// </summary>
+    protected const int BlockedLimit = 4;
 
     protected readonly ICoreClientAPI capi;
     protected readonly Random random = new();
@@ -90,7 +93,7 @@ internal abstract class EmitterField : IDisposable
     /// <summary>Blocks around the (led) centre in which emitters live.</summary>
     protected abstract double Radius { get; }
 
-    /// <summary>Nothing is placed nearer the listener than this.</summary>
+    /// <summary>Nothing is placed nearer the listener's head than this (in any direction: a roof overhead counts by its height).</summary>
     protected virtual double MinRadius => 2.0;
 
     /// <summary>Blocks between emitters.</summary>
@@ -122,7 +125,11 @@ internal abstract class EmitterField : IDisposable
     /// <summary>True when the weather has moved on from what this emitter plays: it is retired as its turn comes.</summary>
     protected virtual bool IsStale(int variant, int kind, float intensity) => false;
 
-    /// <summary>How far into the sample (0..1 of its length) an emitter may start, so they do not play in step.</summary>
+    /// <summary>
+    /// Emitters never loop: each plays one slice of its recording, as long as its life, then its
+    /// place moves on. 1 starts the slice anywhere it fits (so no two play the same stretch);
+    /// 0 always starts at the start (a splash has an attack).
+    /// </summary>
     protected virtual float RandomStartFraction => 1f;
 
     // ---- shared machinery ----
@@ -362,9 +369,10 @@ internal abstract class EmitterField : IDisposable
         for (int i = rough.Count - 1; i >= 0; i--)
         {
             EmitterCandidate candidate = rough[i];
-            double px = candidate.X - playerPos.X;
-            double pz = candidate.Z - playerPos.Z;
-            if ((px * px) + (pz * pz) < minRadiusSq || Math.Abs(candidate.Y - playerPos.Y) > MaxVerticalOffset)
+            double px = candidate.X - ears.X;
+            double py = candidate.Y - ears.Y;
+            double pz = candidate.Z - ears.Z;
+            if ((px * px) + (py * py) + (pz * pz) < minRadiusSq || Math.Abs(candidate.Y - playerPos.Y) > MaxVerticalOffset)
             {
                 rough.RemoveAt(i);
                 continue;
@@ -390,9 +398,10 @@ internal abstract class EmitterField : IDisposable
                 continue;
             }
 
-            // A clear way counts for most of it: in a cave that is the mouth, and little else.
+            // A clear way counts, but nearness counts for more: the roof over your head is the
+            // rain you hear most, though it is behind its own boards.
             double openness = 1.0 - (blocked / (double)(BlockedLimit + 1));
-            candidates.Add(candidate with { Score = (openness * 0.5) + (candidate.Score * 0.5) });
+            candidates.Add(candidate with { Score = (openness * 0.35) + (candidate.Score * 0.65) });
         }
 
         candidates.Sort((left, right) => right.Score.CompareTo(left.Score));
@@ -414,7 +423,7 @@ internal abstract class EmitterField : IDisposable
     }
 
     private static double Value(Emitter emitter, Vec3d centre, double radius, Motion motion) =>
-        (Geometry(emitter.X, emitter.Z, emitter.Quality, centre, radius, motion) * 0.5) + 0.5;  // it was open when placed
+        (Geometry(emitter.X, emitter.Z, emitter.Quality, centre, radius, motion) * 0.65) + 0.35;  // it was open when placed
 
     /// <summary>The emitter whose place should change hands next: an expired one, else the worst placed.</summary>
     private Emitter Worst(Vec3d centre, double radius, Motion motion, long nowMs, bool expiredFirst)
@@ -490,14 +499,23 @@ internal abstract class EmitterField : IDisposable
             return false;
         }
 
-        sound.SetVolume(0f);
-        sound.Start();
-        if (RandomStartFraction > 0f && sound.SoundLengthSeconds > 0.2f)
+        // One slice of the recording, never a loop: the life fits inside the sample, and the
+        // slice starts anywhere it fits.
+        double lifetime = Math.Max(0.5, LifetimeSeconds) * (0.5 + random.NextDouble());
+        float length = sound.SoundLengthSeconds;
+        if (length > 0.2f)
         {
-            sound.PlaybackPosition = (float)random.NextDouble() * RandomStartFraction * sound.SoundLengthSeconds;
+            lifetime = Math.Min(lifetime, Math.Max(0.5, length - FadeSeconds - 0.1));
         }
 
-        double lifetime = Math.Max(0.5, LifetimeSeconds) * (0.5 + random.NextDouble());
+        sound.SetVolume(0f);
+        sound.Start();
+        double room = length - lifetime - FadeSeconds - 0.1;
+        if (RandomStartFraction > 0f && room > 0.05)
+        {
+            sound.PlaybackPosition = (float)(random.NextDouble() * RandomStartFraction * room);
+        }
+
         emitters.Add(new Emitter(sound, chosen.X, chosen.Y, chosen.Z)
         {
             Quality = chosen.Quality,

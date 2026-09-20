@@ -119,7 +119,7 @@
     {
       "code": "RainSurfaceEmitterSpacing",
       "type": "float",
-      "default": 2.5,
+      "default": 2.0,
       "clientSide": true,
       "ingui": "Rain emitter spacing",
       "comment": "Blocks between rain emitters (lower packs more into a small opening).",
@@ -132,7 +132,7 @@
     {
       "code": "RainSurfaceEmitterLifetimeSeconds",
       "type": "float",
-      "default": 5.0,
+      "default": 3.0,
       "clientSide": true,
       "ingui": "Rain emitter lifetime",
       "comment": "Seconds an emitter plays before its place moves on (lower keeps the rain shifting).",

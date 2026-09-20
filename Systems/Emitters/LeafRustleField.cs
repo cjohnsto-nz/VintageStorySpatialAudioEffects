@@ -39,8 +39,6 @@ internal sealed class LeafRustleField : EmitterField
 
     protected override double MaxVerticalOffset => VerticalReach + 2;
 
-    /// <summary>The recordings are long gusts: entering in their first half varies them.</summary>
-    protected override float RandomStartFraction => 0.5f;
 
     protected override bool TryGetIntensity(Entity player, out float intensity)
     {
