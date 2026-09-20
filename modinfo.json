@@ -6,7 +6,7 @@
     "chrisunfocused"
   ],
   "version": "1.0.0",
-  "description": "Sound comes from where it is made. Rain, wind, water and rain on windows play from the surfaces and blocks that make them, on a grid of emitters around you, in place of the listener-relative beds and the single ambient sound vanilla gives a whole lake or wall of windows. Works with vanilla audio, and with the Spatial Audio mod, which muffles and reflects what it places.",
+  "description": "Ambient sound from where it is made: rain, wind, water and rain on windows play from the surfaces and blocks around you, in place of one sound at your head. Works with vanilla audio, and with the Spatial Audio mod.",
   "dependencies": {
     "game": "1.22.7"
   },

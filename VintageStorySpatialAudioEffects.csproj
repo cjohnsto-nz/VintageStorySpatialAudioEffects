@@ -257,6 +257,7 @@
     <RemoveDir Directories="$(FullModPackagePath)" />
     <MakeDir Directories="$(FullModPackagePath)" />
     <Copy SourceFiles="modinfo.json" DestinationFolder="$(FullModPackagePath)" />
+    <Copy SourceFiles="modicon.png" DestinationFolder="$(FullModPackagePath)" />
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(FullModPackagePath)" />
     <Copy SourceFiles="@(Content)" DestinationFiles="@(Content->'$(FullModPackagePath)\%(PackagePath)')" SkipUnchangedFiles="true" />
   </Target>
