@@ -336,13 +336,13 @@
     {
       "code": "FlowingWaterRadius",
       "type": "float",
-      "default": 20.0,
+      "default": 32.0,
       "clientSide": true,
       "ingui": "Creek and fall radius",
       "comment": "How far out (blocks) running water is given emitters.",
       "range": {
         "min": 6.0,
-        "max": 48.0,
+        "max": 64.0,
         "step": 1.0
       }
     },

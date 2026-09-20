@@ -194,7 +194,9 @@ internal sealed class WaterField : EmitterField
             Location = location,
             Position = new Vec3f((float)cell.X, (float)cell.Y, (float)cell.Z),
             RelativePosition = false,
-            Range = Still ? 24f : 16f,
+            // How far it carries. Running water is heard from a long way off - a fall across a
+            // valley, a creek through the trees - so it is given vanilla's own ambient range.
+            Range = Still ? 24f : 40f,
             SoundType = EnumSoundType.Ambient,
             // Open water is the same recording a shade lower than the lapping at its edge.
             Pitch = (cell.Kind == OpenWater ? 0.96f : 1f) + ((float)random.NextDouble() * 0.06f),

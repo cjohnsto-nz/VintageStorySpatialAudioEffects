@@ -98,7 +98,7 @@ public sealed class SurroundWeatherConfig
     public float FlowingWaterVolume { get; set; } = 0.85f;
 
     /// <summary>How far out (blocks) running water is given emitters.</summary>
-    public float FlowingWaterRadius { get; set; } = 20f;
+    public float FlowingWaterRadius { get; set; } = 32f;
 
     /// <summary>The most running-water emitters at once; the nearest water wins.</summary>
     public int FlowingWaterCount { get; set; } = 10;
