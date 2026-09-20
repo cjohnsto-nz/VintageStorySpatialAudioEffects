@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using HarmonyLib;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
+using Vintagestory.API.Common.Entities;
 using Vintagestory.API.Datastructures;
 
 namespace SurroundWeather;
@@ -44,6 +46,7 @@ public sealed class SurroundWeatherModSystem : ModSystem
         harmony = new Harmony(Mod.Info.ModID);
         harmony.PatchAll(typeof(SurroundWeatherModSystem).Assembly);
         CustomSoundRegistry.Register(api, Mod.Logger);
+        RegisterCommands(api);
         AmbientSoundPlacementPatch.Initialize(api);
         RainWindowSuppressor.TryPatch(harmony, Mod.Logger);
         ApplyRuntimeConfig();
@@ -110,6 +113,59 @@ public sealed class SurroundWeatherModSystem : ModSystem
     }
 
     private static SurroundWeatherConfig Config => SurroundWeatherConfigManager.Current;
+
+    private void RegisterCommands(ICoreClientAPI api)
+    {
+        api.ChatCommands.Create("surroundweather")
+            .WithDescription("Surround Weather: what its emitters are doing")
+            .WithAlias("sw")
+            .BeginSubCommand("status")
+                .WithDescription("Every emitter field: how many are playing, and how strongly the weather is driving it")
+                .HandleWith(_ => TextCommandResult.Success(Status()))
+            .EndSubCommand()
+            .BeginSubCommand("windows")
+                .WithDescription("Every window nearby: which side the rain reaches it from, and whether it is playing")
+                .HandleWith(_ => TextCommandResult.Success(Windows()))
+            .EndSubCommand();
+    }
+
+    private string Status()
+    {
+        if (fields.Count == 0)
+        {
+            return "No emitter fields are on. See ModConfig/surroundweather.json.";
+        }
+
+        var lines = new List<string>();
+        foreach ((EmitterField field, EmitterFieldDebugRenderer _) in fields)
+        {
+            lines.Add(field.Describe());
+        }
+
+        lines.Add(WeatherState.TryGetRainfall(clientApi, out float rainfall)
+            ? string.Format(CultureInfo.InvariantCulture, "raining: {0:0.00}", rainfall)
+            : "not raining (snow, hail and dry weather count as dry here)");
+        return string.Join("\n", lines);
+    }
+
+    private string Windows()
+    {
+        EntityPos position = clientApi?.World?.Player?.Entity?.Pos;
+        if (position == null)
+        {
+            return "no player";
+        }
+
+        foreach ((EmitterField field, EmitterFieldDebugRenderer _) in fields)
+        {
+            if (field is RainWindowField windows)
+            {
+                return windows.DescribeWindows(position);
+            }
+        }
+
+        return "The window emitters are off (ExperimentalWindowRainEmitters in ModConfig/surroundweather.json).";
+    }
 
     private void AddField(EmitterField field, string name, Func<bool> debugEnabled, int color, float loudest)
     {

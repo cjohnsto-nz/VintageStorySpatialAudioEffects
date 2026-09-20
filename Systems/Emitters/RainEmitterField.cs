@@ -66,6 +66,8 @@ internal sealed class RainEmitterField : EmitterField
 
     private static SurroundWeatherConfig Config => SurroundWeatherConfigManager.Current;
 
+    public override string Name => Loops ? "rain on surfaces" : "rain splashes";
+
     private bool Loops => profile == RainFieldProfile.SurfaceLoops;
 
     protected override double Radius => Loops ? Config.RainSurfaceEmitterRadius : 20.0;

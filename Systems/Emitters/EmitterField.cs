@@ -68,6 +68,7 @@ internal abstract class EmitterField : IDisposable
     private double velocityX;
     private double velocityZ;
     private double logicAccumulator;
+    private float lastIntensity;
 
     protected EmitterField(ICoreClientAPI capi)
     {
@@ -76,6 +77,26 @@ internal abstract class EmitterField : IDisposable
     }
 
     // ---- what a field is ----
+
+    /// <summary>What this field is, for the status command.</summary>
+    public abstract string Name { get; }
+
+    /// <summary>What it is doing now.</summary>
+    public string Describe()
+    {
+        lock (emittersLock)
+        {
+            int playing = 0;
+            foreach (Emitter emitter in emitters)
+            {
+                playing += emitter.Retiring ? 0 : 1;
+            }
+
+            return string.Format(
+                "{0}: {1} playing, {2} fading, {3} cells wanted, intensity {4:0.00}",
+                Name, playing, emitters.Count - playing, cells.Count, lastIntensity);
+        }
+    }
 
     /// <summary>Whether the field plays now, and how strongly (0..1): the rainfall, the wind.</summary>
     protected abstract bool TryGetIntensity(Entity player, out float intensity);
@@ -233,11 +254,13 @@ internal abstract class EmitterField : IDisposable
                 Retire(emitter, FadeSeconds);
             }
 
+            lastIntensity = 0f;
             hasLastPosition = false;
             hasCells = false;
             return;
         }
 
+        lastIntensity = intensity;
         EntityPos playerPos = player.Pos;
         (double dirX, double dirZ, double speed) = UpdateMotion(playerPos, stepSeconds);
         double radius = Math.Max(NearSpacing * 2.0, Radius);

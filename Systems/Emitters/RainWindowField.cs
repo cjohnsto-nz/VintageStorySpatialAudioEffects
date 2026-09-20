@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
@@ -24,6 +25,10 @@ internal sealed class RainWindowField : EmitterField
     private const float MinRainfall = 0.1f;
     /// <summary>Out from the middle of the pane: just past its face, in the weather.</summary>
     private const double OutsideOffset = 0.6;
+    /// <summary>Vanilla's own gate: a pane sounds when rain falls within two blocks of it.</summary>
+    private const int MaxDistanceToRain = 2;
+
+    public override string Name => "rain on windows";
 
     public RainWindowField(ICoreClientAPI capi)
         : base(capi)
@@ -89,7 +94,7 @@ internal sealed class RainWindowField : EmitterField
                     }
 
                     pos.Set(x + dx, baseY + dy, z + dz);
-                    if (!IsWindow(blocks.GetBlock(pos)) || !TryGetWeatherSide(blocks, pos, out BlockFacing side))
+                    if (!IsWindow(blocks.GetBlock(pos)) || !TryGetWeatherSide(blocks, pos, out BlockFacing side, out _))
                     {
                         continue;
                     }
@@ -129,16 +134,76 @@ internal sealed class RainWindowField : EmitterField
     protected override float VolumeOf(int variant, in EmitterCell cell, float intensity) =>
         Math.Max(0f, Config.RainWindowVolume) * intensity;
 
+    /// <summary>Every window within reach and what this field makes of it, for the status command.</summary>
+    internal string DescribeWindows(EntityPos playerPos, int reach = 10)
+    {
+        IBlockAccessor blocks = capi.World?.BlockAccessor;
+        if (blocks == null)
+        {
+            return "no world";
+        }
+
+        List<EmitterVisual> live = GetSnapshot();
+        var lines = new List<string>();
+        var pos = new BlockPos(0, 0, 0, playerPos.Dimension);
+        int baseX = (int)Math.Floor(playerPos.X);
+        int baseY = (int)Math.Floor(playerPos.Y);
+        int baseZ = (int)Math.Floor(playerPos.Z);
+        for (int dx = -reach; dx <= reach; dx++)
+        {
+            for (int dy = -VerticalReach; dy <= VerticalReach; dy++)
+            {
+                for (int dz = -reach; dz <= reach; dz++)
+                {
+                    pos.Set(baseX + dx, baseY + dy, baseZ + dz);
+                    if (!IsWindow(blocks.GetBlock(pos)))
+                    {
+                        continue;
+                    }
+
+                    bool sounds = TryGetWeatherSide(blocks, pos, out BlockFacing side, out int distance);
+                    bool playing = false;
+                    foreach (EmitterVisual visual in live)
+                    {
+                        playing |= Math.Abs(visual.Position.X - (pos.X + 0.5)) <= 1
+                            && Math.Abs(visual.Position.Y - (pos.Y + 0.5)) <= 1
+                            && Math.Abs(visual.Position.Z - (pos.Z + 0.5)) <= 1;
+                    }
+
+                    string state = !sounds ? "no rain reaches it"
+                        : playing ? "PLAYING"
+                        : "silent (crowded out, too far, or behind rock)";
+                    lines.Add(string.Format(
+                        "{0},{1},{2}: {3}, rain {4} away: {5}",
+                        pos.X, pos.Y, pos.Z,
+                        side == null ? "walled in" : "weather side " + side.Code,
+                        distance == int.MaxValue ? "never" : distance.ToString(),
+                        state));
+                }
+            }
+        }
+
+        lines.Sort(StringComparer.Ordinal);
+        return lines.Count == 0
+            ? string.Format("no windows within {0} blocks", reach)
+            : string.Format("{0} window(s) within {1} blocks, {2} emitter(s) live:", lines.Count, reach, live.Count)
+              + "\n" + string.Join("\n", lines);
+    }
+
     internal static bool IsWindow(Block block) =>
         block?.Sounds?.Ambient?.Path?.Contains(WindowSound, StringComparison.OrdinalIgnoreCase) == true;
 
     /// <summary>
-    /// The side of a pane the rain falls on: a neighbour that is open air and open to the sky. A
-    /// window between two rooms has none, and stays quiet.
+    /// The side of a pane the rain falls on: the open neighbour the rain is nearest to, by the
+    /// game's own reckoning. GetDistanceToRainFall floods out through open air only, never through
+    /// a wall, so from outside a pane it is 0 (a block or two under an eave) and from inside a room
+    /// it finds nothing. A window between two rooms therefore has no weather side and stays quiet,
+    /// as does one deep under cover, which is vanilla's rule for sounding a pane at all.
     /// </summary>
-    private static bool TryGetWeatherSide(IBlockAccessor blocks, BlockPos pos, out BlockFacing side)
+    private static bool TryGetWeatherSide(IBlockAccessor blocks, BlockPos pos, out BlockFacing side, out int distanceToRain)
     {
         side = null;
+        distanceToRain = int.MaxValue;
         var neighbour = new BlockPos(0, 0, 0, pos.dimension);
         foreach (BlockFacing facing in BlockFacing.ALLFACES)
         {
@@ -149,15 +214,24 @@ internal sealed class RainWindowField : EmitterField
 
             neighbour.Set(pos.X + facing.Normali.X, pos.Y + facing.Normali.Y, pos.Z + facing.Normali.Z);
             Block block = blocks.GetBlock(neighbour);
-            if (block == null || IsSolid(block) || blocks.GetRainMapHeightAt(neighbour.X, neighbour.Z) > neighbour.Y)
+            if (block == null || IsSolid(block))
             {
-                continue;  // walled in, or under cover: no rain on this side
+                continue;  // walled in on this side
             }
 
+            // Open to the sky is rain at once; otherwise ask how far the rain is from there.
+            int distance = blocks.GetRainMapHeightAt(neighbour.X, neighbour.Z) <= neighbour.Y
+                ? 0
+                : blocks.GetDistanceToRainFall(neighbour, 3, 2);
+            if (distance >= distanceToRain)
+            {
+                continue;
+            }
+
+            distanceToRain = distance;
             side = facing;
-            return true;
         }
 
-        return false;
+        return side != null && distanceToRain <= MaxDistanceToRain;
     }
 }

@@ -39,6 +39,8 @@ internal sealed class WindEmitterField : EmitterField
     {
     }
 
+    public override string Name => "wind";
+
     private static SurroundWeatherConfig Config => SurroundWeatherConfigManager.Current;
 
     /// <summary>Wind is broad: fewer, wider cells than rain.</summary>

@@ -29,6 +29,7 @@ internal static class RainWindowSuppressor
         }
 
         harmony.Patch(method, postfix: new HarmonyMethod(typeof(RainWindowSuppressor), nameof(Postfix)));
+        logger.Notification("Patched {0}.GetAmbientSoundStrength: vanilla's rain-on-glass sound gives way to the window emitters.", BlockClass);
     }
 
     public static void Postfix(ref float __result)

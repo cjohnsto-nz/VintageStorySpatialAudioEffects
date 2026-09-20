@@ -24,6 +24,8 @@ internal sealed class LeafRustleField : EmitterField
     {
     }
 
+    public override string Name => "leaf rustles";
+
     private static SurroundWeatherConfig Config => SurroundWeatherConfigManager.Current;
 
     protected override double Radius => 24.0;
