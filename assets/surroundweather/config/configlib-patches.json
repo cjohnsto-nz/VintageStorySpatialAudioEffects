@@ -227,6 +227,32 @@
       }
     },
     {
+      "code": "RainWindowRadius",
+      "type": "float",
+      "default": 10.0,
+      "clientSide": true,
+      "ingui": "Window rain radius",
+      "comment": "How far out (blocks) windows are given emitters; every pane within it gets one.",
+      "range": {
+        "min": 2.0,
+        "max": 32.0,
+        "step": 1.0
+      }
+    },
+    {
+      "code": "RainWindowMaxCount",
+      "type": "integer",
+      "default": 24,
+      "clientSide": true,
+      "ingui": "Window rain emitters",
+      "comment": "The most window emitters at once; the nearest panes win.",
+      "range": {
+        "min": 1,
+        "max": 64,
+        "step": 1
+      }
+    },
+    {
       "code": "PlaceAmbientSoundsOnTheirBlocks",
       "type": "boolean",
       "default": true,

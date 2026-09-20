@@ -121,6 +121,13 @@ internal abstract class EmitterField : IDisposable
     /// <summary>Seconds of the listener's travel the rings are centred ahead by.</summary>
     protected virtual double LeadSeconds => 1.5;
 
+    /// <summary>
+    /// Cells double in size in every ring outward (rain and wind cover ground, and the far side of
+    /// it needs less). False keeps one size throughout: for small things that each want their own
+    /// emitter, such as a window pane.
+    /// </summary>
+    protected virtual bool RingsWiden => true;
+
     /// <summary>Leave cells with more than BlockedLimit solid blocks in the way empty.</summary>
     protected virtual bool CullOccluded => true;
 
@@ -351,18 +358,25 @@ internal abstract class EmitterField : IDisposable
 
         cells.Clear();
         int nearSize = Math.Max(1, (int)Math.Round(NearSpacing));
-        double inner = 0.0;
-        for (int level = 0; inner < radius && level < 6; level++)
+        if (!RingsWiden)
         {
-            int size = nearSize << level;
-            double outer = Math.Min(radius, nearSize * 3.0 * (1 << level));
-            if (level == 5)
+            AddRing(blocks, centre, 0.0, radius, nearSize, 0, playerPos, ears, nowMs);
+        }
+        else
+        {
+            double inner = 0.0;
+            for (int level = 0; inner < radius && level < 6; level++)
             {
-                outer = radius;
-            }
+                int size = nearSize << level;
+                double outer = Math.Min(radius, nearSize * 3.0 * (1 << level));
+                if (level == 5)
+                {
+                    outer = radius;
+                }
 
-            AddRing(blocks, centre, inner, outer, size, level, playerPos, ears, nowMs);
-            inner = outer;
+                AddRing(blocks, centre, inner, outer, size, level, playerPos, ears, nowMs);
+                inner = outer;
+            }
         }
 
         cells.Sort((left, right) => DistanceSq(left, ears).CompareTo(DistanceSq(right, ears)));

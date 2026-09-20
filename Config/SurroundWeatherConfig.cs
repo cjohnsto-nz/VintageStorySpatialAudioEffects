@@ -64,6 +64,12 @@ public sealed class SurroundWeatherConfig
     /// <summary>How loud one window is in full rain.</summary>
     public float RainWindowVolume { get; set; } = 0.25f;
 
+    /// <summary>How far out (blocks) windows are given emitters; every pane within it gets one.</summary>
+    public float RainWindowRadius { get; set; } = 10f;
+
+    /// <summary>The most window emitters at once; the nearest panes win.</summary>
+    public int RainWindowMaxCount { get; set; } = 24;
+
     /// <summary>
     /// Play a block's ambient sound (a beehive, a translocator) from the nearest block that makes it, rather
     /// than from vanilla's bounding box, which puts it on your head indoors.
