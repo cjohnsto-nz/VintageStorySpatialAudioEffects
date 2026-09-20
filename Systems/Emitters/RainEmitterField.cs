@@ -28,6 +28,12 @@ internal sealed class RainEmitterField : EmitterField
     private const float MediumRainFrom = 0.35f;
     private const float HeavyRainFrom = 0.7f;
     private const float BaseVolume = 0.85f;
+    /// <summary>
+    /// A quarter block above the surface rain lands on. On the face itself a source sits exactly
+    /// on the boundary plane, where a roof or floor neither clearly blocks it nor clearly does not,
+    /// and rain on the ground outside leaked through the roof of a house.
+    /// </summary>
+    private const double HeightAboveSurface = 0.25;
     private const float SplashVolume = 0.32f;
 
     // Kinds: what the rain lands on.
@@ -95,7 +101,7 @@ internal sealed class RainEmitterField : EmitterField
     {
         // The top of the cell's centre column's rain-blocking block: the ground, a roof.
         int surfaceY = blocks.GetRainMapHeightAt(x, z);
-        y = surfaceY + 1.0;
+        y = surfaceY + 1.0 + HeightAboveSurface;
         kind = OnGround;
         if (Math.Abs(y - playerPos.Y) > MaxVerticalOffset)
         {
