@@ -5,8 +5,8 @@
   "authors": [
     "chrisunfocused"
   ],
-  "version": "1.0.0",
-  "description": "Ambient sound from where it is made: rain, wind, water and rain on windows play from the surfaces and blocks around you, in place of one sound at your head. Works with vanilla audio, and with the Spatial Audio mod.",
+  "version": "0.1.0",
+  "description": "Ambient sound from where it is made: rain, wind, water and rain on windows play from the surfaces and blocks around you, in place of one sound at your head. Built for the Spatial Audio mod, which muffles and reflects what this one places; it needs no such engine, and runs on vanilla audio too.",
   "dependencies": {
     "game": "1.22.7"
   },
