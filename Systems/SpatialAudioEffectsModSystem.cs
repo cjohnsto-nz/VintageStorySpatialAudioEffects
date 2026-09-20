@@ -127,9 +127,26 @@ public sealed class SpatialAudioEffectsModSystem : ModSystem
 
     private static SpatialAudioEffectsConfig Config => SpatialAudioEffectsConfigManager.Current;
 
+    /// <summary>
+    /// The status command, if the name is free. The engine mod owns .spatialaudio, so this is
+    /// .spatialeffects - and it is registered inside a try, because a name taken by some other mod
+    /// throws, and a chat command is not worth taking the emitters down with it.
+    /// </summary>
     private void RegisterCommands(ICoreClientAPI api)
     {
-        api.ChatCommands.Create("spatialaudio")
+        try
+        {
+            RegisterStatusCommand(api);
+        }
+        catch (Exception exception)
+        {
+            Mod.Logger.Warning("Could not register the .spatialeffects command ({0}); the emitters run regardless.", exception.Message);
+        }
+    }
+
+    private void RegisterStatusCommand(ICoreClientAPI api)
+    {
+        api.ChatCommands.Create("spatialeffects")
             .WithDescription("Spatial Audio Effects: what its emitters are doing")
             .WithAlias("sae")
             .BeginSubCommand("status")

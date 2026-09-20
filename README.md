@@ -44,8 +44,8 @@ Every field can be turned off, and its volume, radius, spacing and emitter count
 ConfigLib installed the dialog's changes take hold as you make them; editing the file by hand takes
 effect when the game next starts.
 
-In game, `.spatialaudio status` (alias `.sae`) reports what every field is doing, and
-`.spatialaudio windows` lists the panes nearby with why each is sounding or silent.
+In game, `.spatialeffects status` (alias `.sae`) reports what every field is doing, and
+`.spatialeffects windows` lists the panes nearby with why each is sounding or silent.
 
 ## Build and deploy
 
