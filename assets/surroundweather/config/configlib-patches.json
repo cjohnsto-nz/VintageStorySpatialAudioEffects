@@ -253,6 +253,53 @@
       }
     },
     {
+      "code": "ExperimentalWaterWaveEmitters",
+      "type": "boolean",
+      "default": true,
+      "clientSide": true,
+      "ingui": "Water emitters",
+      "comment": "Water sounds from the water, an emitter at a time, instead of one sound for a whole lake."
+    },
+    {
+      "code": "WaterWaveVolume",
+      "type": "float",
+      "default": 0.5,
+      "clientSide": true,
+      "ingui": "Water volume",
+      "comment": "How loud the water lapping at a shore is; open water is quieter than this.",
+      "range": {
+        "min": 0.0,
+        "max": 2.0,
+        "step": 0.05
+      }
+    },
+    {
+      "code": "WaterWaveRadius",
+      "type": "float",
+      "default": 24.0,
+      "clientSide": true,
+      "ingui": "Water radius",
+      "comment": "How far out (blocks) the water is given emitters.",
+      "range": {
+        "min": 8.0,
+        "max": 64.0,
+        "step": 1.0
+      }
+    },
+    {
+      "code": "WaterWaveCount",
+      "type": "integer",
+      "default": 16,
+      "clientSide": true,
+      "ingui": "Water emitter count",
+      "comment": "The most water emitters at once; the nearest water wins.",
+      "range": {
+        "min": 1,
+        "max": 64,
+        "step": 1
+      }
+    },
+    {
       "code": "PlaceAmbientSoundsOnTheirBlocks",
       "type": "boolean",
       "default": true,
@@ -295,6 +342,14 @@
       "clientSide": true,
       "ingui": "Show wind emitter visuals",
       "comment": "Draw the wind emitters when debug tools are enabled."
+    },
+    {
+      "code": "ShowWaterWaveDebugVisuals",
+      "type": "boolean",
+      "default": false,
+      "clientSide": true,
+      "ingui": "Show water emitters",
+      "comment": "Draw where the water emitters are."
     }
   ]
 }

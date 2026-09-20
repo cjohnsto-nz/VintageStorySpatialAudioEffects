@@ -49,7 +49,7 @@ public sealed class SurroundWeatherModSystem : ModSystem
         RegisterCommands(api);
         AmbientSoundPlacementPatch.Initialize(api);
         RainWindowSuppressor.TryPatch(harmony, Mod.Logger);
-        VanillaWindowSoundStripper.TryPatch(harmony, Mod.Logger);
+        VanillaAmbientStripper.TryPatch(harmony, Mod.Logger);
         ApplyRuntimeConfig();
     }
 
@@ -104,6 +104,12 @@ public sealed class SurroundWeatherModSystem : ModSystem
         {
             AddField(new RainWindowField(clientApi), "rainwindow",
                 () => Config.EnableDebugTools && Config.ShowRainSurfaceEmitterDebugVisuals, unchecked((int)0xFFFFD24D), 0.25f);
+        }
+
+        if (config.ExperimentalWaterWaveEmitters)
+        {
+            AddField(new WaterWaveField(clientApi), "water",
+                () => Config.EnableDebugTools && Config.ShowWaterWaveDebugVisuals, unchecked((int)0xFF4D9AFF), 1f);
         }
 
         if (config.EnableRainEmitters)

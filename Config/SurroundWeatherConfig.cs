@@ -71,6 +71,21 @@ public sealed class SurroundWeatherConfig
     public int RainWindowMaxCount { get; set; } = 24;
 
     /// <summary>
+    /// Experimental: water sounds from the water, an emitter at a time, instead of vanilla's one
+    /// sound for a whole lake played from whichever bit of it you stand nearest.
+    /// </summary>
+    public bool ExperimentalWaterWaveEmitters { get; set; } = true;
+
+    /// <summary>How loud the water lapping at a shore is; open water is quieter than this.</summary>
+    public float WaterWaveVolume { get; set; } = 0.5f;
+
+    /// <summary>How far out (blocks) the water is given emitters.</summary>
+    public float WaterWaveRadius { get; set; } = 24f;
+
+    /// <summary>The most water emitters at once; the nearest water wins.</summary>
+    public int WaterWaveCount { get; set; } = 16;
+
+    /// <summary>
     /// Play a block's ambient sound (a beehive, a translocator) from the nearest block that makes it, rather
     /// than from vanilla's bounding box, which puts it on your head indoors.
     /// </summary>
@@ -80,7 +95,10 @@ public sealed class SurroundWeatherConfig
     public bool ShowLeafRustleDebugVisuals { get; set; } = false;
     public bool ShowRainEmitterDebugVisuals { get; set; } = false;
     public bool ShowRainSurfaceEmitterDebugVisuals { get; set; } = false;
-    public bool ShowWindEmitterDebugVisuals { get; set; } = false;
+    public bool ShowWindEmitterDebugVisuals { get; set; }
+
+    /// <summary>Draw where the water emitters are.</summary>
+    public bool ShowWaterWaveDebugVisuals { get; set; } = false;
 }
 
 internal static class SurroundWeatherConfigManager
