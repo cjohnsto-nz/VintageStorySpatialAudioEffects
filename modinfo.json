@@ -5,7 +5,7 @@
   "authors": [
     "chrisunfocused"
   ],
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Replaces fixed stereo weather tracks and one-per-area ambient sounds with positional emitters on the blocks that make them. Built for the Spatial Audio mod; works on vanilla audio.",
   "dependencies": {
     "game": "1.22.7"
