@@ -62,7 +62,7 @@ public sealed class SurroundWeatherConfig
     public bool ExperimentalWindowRainEmitters { get; set; } = false;
 
     /// <summary>How loud one window is in full rain.</summary>
-    public float RainWindowVolume { get; set; } = 0.25f;
+    public float RainWindowVolume { get; set; } = 0.4f;
 
     /// <summary>How far out (blocks) windows are given emitters; every pane within it gets one.</summary>
     public float RainWindowRadius { get; set; } = 10f;

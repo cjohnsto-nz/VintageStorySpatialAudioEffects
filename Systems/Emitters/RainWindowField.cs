@@ -22,13 +22,16 @@ internal sealed class RainWindowField : EmitterField
     internal const string WindowSound = "rainwindow";
 
     private const int VerticalReach = 6;
-    /// <summary>How far out from a pane to look for open sky: enough to see past an eave.</summary>
+    /// <summary>How far out from a pane to look for cover, to say why a pane is quiet.</summary>
     private const int OutwardReach = 3;
     private const float MinRainfall = 0.1f;
     /// <summary>Out from the middle of the pane: just past its face, in the weather.</summary>
     private const double OutsideOffset = 0.6;
 
     public override string Name => "rain on windows";
+
+    /// <summary>Whatever the panes hereabouts play for rain, taken from the first one seen.</summary>
+    private AssetLocation windowSound;
 
     public RainWindowField(ICoreClientAPI capi)
         : base(capi)
@@ -100,10 +103,13 @@ internal sealed class RainWindowField : EmitterField
                     }
 
                     pos.Set(x + dx, baseY + dy, z + dz);
-                    if (!IsWindow(blocks.GetBlock(pos)) || !TryGetWeatherSide(blocks, pos, out BlockFacing side))
+                    Block window = blocks.GetBlock(pos);
+                    if (!IsWindow(window) || !TryGetWeatherSide(blocks, pos, out BlockFacing side, out _, out _))
                     {
                         continue;
                     }
+
+                    windowSound = window.Sounds.Ambient;
 
                     best = distance;
                     px = pos.X + 0.5 + (side.Normali.X * OutsideOffset);
@@ -118,19 +124,24 @@ internal sealed class RainWindowField : EmitterField
 
     protected override ILoadedSound CreateSound(in EmitterCell cell, float intensity, out int variant)
     {
-        // The rain the window is under: the same sets the surfaces use, lightly pitched apart.
+        // The pane's own recording - vanilla's rain on glass - one slice at a time, from outside
+        // the glass instead of from a single point that follows the listener about. Every emitter
+        // starts somewhere else in it and is pitched a little apart, so a wall of them is rain
+        // rather than one sound played several times over.
         variant = 0;
-        AssetLocation[] samples = intensity < 0.35f ? CustomSoundRegistry.RainLightLoops
-            : intensity < 0.7f ? CustomSoundRegistry.RainMediumLoops
-            : CustomSoundRegistry.RainHeavyLoops;
+        if (windowSound == null)
+        {
+            return null;
+        }
+
         return capi.World.LoadSound(new SoundParams
         {
-            Location = samples[random.Next(samples.Length)],
+            Location = windowSound,
             Position = new Vec3f((float)cell.X, (float)cell.Y, (float)cell.Z),
             RelativePosition = false,
             Range = 12f,
             SoundType = EnumSoundType.Weather,
-            Pitch = 1.02f + ((float)random.NextDouble() * 0.12f),  // thinner than rain on the ground
+            Pitch = 0.95f + ((float)random.NextDouble() * 0.14f),
             Volume = 0f,
             ShouldLoop = false,
             DisposeOnFinish = false,
@@ -167,7 +178,7 @@ internal sealed class RainWindowField : EmitterField
                         continue;
                     }
 
-                    bool sounds = TryGetWeatherSide(blocks, pos, out BlockFacing side);
+                    bool sounds = TryGetWeatherSide(blocks, pos, out BlockFacing side, out BlockFacing covered, out int skyOut);
                     bool playing = false;
                     foreach (EmitterVisual visual in live)
                     {
@@ -176,14 +187,14 @@ internal sealed class RainWindowField : EmitterField
                             && Math.Abs(visual.Position.Z - (pos.Z + 0.5)) <= 1;
                     }
 
-                    string state = !sounds ? "no open sky on any side: silent"
+                    string where = sounds ? "clear sky " + side.Code
+                        : covered == null ? "walled in"
+                        : skyOut > 0 ? string.Format("under cover {0}, sky {1} blocks out", covered.Code, skyOut)
+                        : "under cover " + covered.Code;
+                    string state = !sounds ? "silent"
                         : playing ? "PLAYING"
                         : "silent (crowded out, too far, or behind rock)";
-                    lines.Add(string.Format(
-                        "{0},{1},{2}: {3}: {4}",
-                        pos.X, pos.Y, pos.Z,
-                        side == null ? "no weather side" : "weather side " + side.Code,
-                        state));
+                    lines.Add(string.Format("{0},{1},{2}: {3}: {4}", pos.X, pos.Y, pos.Z, where, state));
                 }
             }
         }
@@ -199,14 +210,22 @@ internal sealed class RainWindowField : EmitterField
         block?.Sounds?.Ambient?.Path?.Contains(WindowSound, StringComparison.OrdinalIgnoreCase) == true;
 
     /// <summary>
-    /// The side of a pane the rain falls on: the one you can follow straight out, through open air,
-    /// until the sky is overhead. An eave of a block or two is still outside and still sounds; a
-    /// room is not, because its roof stays overhead however far across it you go. So an emitter
-    /// cannot end up on the inside face, and a window between two rooms stays quiet.
+    /// The side of a pane the rain falls on: an open neighbour with clear sky straight above it.
+    /// Rain has to land on the glass to be heard through it, so an eave over that neighbour is
+    /// enough to keep the pane quiet, and the inside of a room - always under its own roof - can
+    /// never be chosen.
+    /// <para>
+    /// <paramref name="coveredSide"/> and <paramref name="skyStepsOut"/> are for the status
+    /// command only: the nearest face that is open air but roofed over, and how far out along it
+    /// the sky does open, so a quiet window can say whether it is walled in or under an eave.
+    /// </para>
     /// </summary>
-    private static bool TryGetWeatherSide(IBlockAccessor blocks, BlockPos pos, out BlockFacing side)
+    private static bool TryGetWeatherSide(IBlockAccessor blocks, BlockPos pos, out BlockFacing side,
+                                          out BlockFacing coveredSide, out int skyStepsOut)
     {
         side = null;
+        coveredSide = null;
+        skyStepsOut = 0;
         var probe = new BlockPos(0, 0, 0, pos.dimension);
         foreach (BlockFacing facing in BlockFacing.ALLFACES)
         {
@@ -224,11 +243,28 @@ internal sealed class RainWindowField : EmitterField
                     break;  // walled in this way; try another face
                 }
 
-                if (blocks.GetRainMapHeightAt(probe.X, probe.Z) <= probe.Y)
+                if (blocks.GetRainMapHeightAt(probe.X, probe.Z) > probe.Y)
+                {
+                    if (step == 1)
+                    {
+                        coveredSide ??= facing;  // open air, but something overhead
+                    }
+
+                    continue;
+                }
+
+                if (step == 1)
                 {
                     side = facing;
-                    return true;  // open sky out this way: the weather is on this side
+                    return true;  // rain lands right outside the glass: this is the weather side
                 }
+
+                if (coveredSide == facing && skyStepsOut == 0)
+                {
+                    skyStepsOut = step;  // how far past the eave the sky starts, for the report
+                }
+
+                break;
             }
         }
 

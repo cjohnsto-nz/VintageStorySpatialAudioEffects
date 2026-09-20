@@ -216,7 +216,7 @@
     {
       "code": "RainWindowVolume",
       "type": "float",
-      "default": 0.25,
+      "default": 0.4,
       "clientSide": true,
       "ingui": "Window rain volume",
       "comment": "How loud one window is in full rain.",
