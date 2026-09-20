@@ -82,7 +82,21 @@ internal sealed class WaterField : EmitterField
 
     protected override double Radius => Still ? Math.Max(8.0, Config.WaterWaveRadius) : Math.Max(6.0, Config.FlowingWaterRadius);
 
-    protected override double MinRadius => Still ? 3.0 : 1.5;
+    /// <summary>
+    /// Still water wants a stride of clearance, so wading does not put an emitter in your head.
+    /// Running water does not: a fall you are standing beside is a block away, and silencing it
+    /// for being close is the one thing it must never do.
+    /// </summary>
+    protected override double MinRadius => Still ? 3.0 : 0.5;
+
+    /// <summary>
+    /// A lake is broad enough that a cell twice the size still lands on it, and thinning the far
+    /// rings keeps a sea affordable. A fall is a column a block or two wide and a creek a line
+    /// just as narrow: cells of six and twelve blocks step straight over them, and only the ones
+    /// near the listener - where the cells are small - ever find water. Hence the same size all
+    /// the way out.
+    /// </summary>
+    protected override bool RingsWiden => Still;
 
     /// <summary>Waves are slow; a slice wants to be long enough to be one.</summary>
     protected override double LifetimeSeconds => Still ? 6.0 : 5.0;
