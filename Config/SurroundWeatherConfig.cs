@@ -89,6 +89,24 @@ public sealed class SurroundWeatherConfig
     public float WaterWaveSpacing { get; set; } = 8f;
 
     /// <summary>
+    /// Experimental: a creek, rapids and a fall sound from the water that makes them, instead of
+    /// one sound for a whole river played from whichever bend you stand nearest.
+    /// </summary>
+    public bool ExperimentalFlowingWaterEmitters { get; set; } = true;
+
+    /// <summary>How loud a fall is; rapids and a creek are quieter than this.</summary>
+    public float FlowingWaterVolume { get; set; } = 0.5f;
+
+    /// <summary>How far out (blocks) running water is given emitters.</summary>
+    public float FlowingWaterRadius { get; set; } = 20f;
+
+    /// <summary>The most running-water emitters at once; the nearest water wins.</summary>
+    public int FlowingWaterCount { get; set; } = 10;
+
+    /// <summary>Blocks between them: a creek is a line a block or two wide, so they sit close.</summary>
+    public float FlowingWaterSpacing { get; set; } = 3f;
+
+    /// <summary>
     /// Play a block's ambient sound (a beehive, a translocator) from the nearest block that makes it, rather
     /// than from vanilla's bounding box, which puts it on your head indoors.
     /// </summary>
@@ -101,7 +119,10 @@ public sealed class SurroundWeatherConfig
     public bool ShowWindEmitterDebugVisuals { get; set; }
 
     /// <summary>Draw where the water emitters are.</summary>
-    public bool ShowWaterWaveDebugVisuals { get; set; } = false;
+    public bool ShowWaterWaveDebugVisuals { get; set; }
+
+    /// <summary>Draw where the running-water emitters are.</summary>
+    public bool ShowFlowingWaterDebugVisuals { get; set; } = false;
 }
 
 internal static class SurroundWeatherConfigManager

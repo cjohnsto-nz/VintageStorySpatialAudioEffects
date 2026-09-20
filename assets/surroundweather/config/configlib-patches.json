@@ -313,6 +313,66 @@
       }
     },
     {
+      "code": "ExperimentalFlowingWaterEmitters",
+      "type": "boolean",
+      "default": true,
+      "clientSide": true,
+      "ingui": "Creek and fall emitters",
+      "comment": "Running water sounds from the water that makes it, instead of one sound for a whole river."
+    },
+    {
+      "code": "FlowingWaterVolume",
+      "type": "float",
+      "default": 0.5,
+      "clientSide": true,
+      "ingui": "Creek and fall volume",
+      "comment": "How loud a fall is; rapids and a creek are quieter than this.",
+      "range": {
+        "min": 0.0,
+        "max": 2.0,
+        "step": 0.05
+      }
+    },
+    {
+      "code": "FlowingWaterRadius",
+      "type": "float",
+      "default": 20.0,
+      "clientSide": true,
+      "ingui": "Creek and fall radius",
+      "comment": "How far out (blocks) running water is given emitters.",
+      "range": {
+        "min": 6.0,
+        "max": 48.0,
+        "step": 1.0
+      }
+    },
+    {
+      "code": "FlowingWaterCount",
+      "type": "integer",
+      "default": 10,
+      "clientSide": true,
+      "ingui": "Creek and fall emitter count",
+      "comment": "The most running-water emitters at once; the nearest water wins.",
+      "range": {
+        "min": 1,
+        "max": 48,
+        "step": 1
+      }
+    },
+    {
+      "code": "FlowingWaterSpacing",
+      "type": "float",
+      "default": 3.0,
+      "clientSide": true,
+      "ingui": "Creek and fall spacing",
+      "comment": "Blocks between them: a creek is a line a block or two wide, so they sit close.",
+      "range": {
+        "min": 1.0,
+        "max": 16.0,
+        "step": 1.0
+      }
+    },
+    {
       "code": "PlaceAmbientSoundsOnTheirBlocks",
       "type": "boolean",
       "default": true,
@@ -363,6 +423,14 @@
       "clientSide": true,
       "ingui": "Show water emitters",
       "comment": "Draw where the water emitters are."
+    },
+    {
+      "code": "ShowFlowingWaterDebugVisuals",
+      "type": "boolean",
+      "default": false,
+      "clientSide": true,
+      "ingui": "Show creek and fall emitters",
+      "comment": "Draw where the running-water emitters are."
     }
   ]
 }

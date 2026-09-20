@@ -108,8 +108,14 @@ public sealed class SurroundWeatherModSystem : ModSystem
 
         if (config.ExperimentalWaterWaveEmitters)
         {
-            AddField(new WaterWaveField(clientApi), "water",
+            AddField(new WaterField(clientApi, WaterFieldProfile.Waves), "water",
                 () => Config.EnableDebugTools && Config.ShowWaterWaveDebugVisuals, unchecked((int)0xFF4D9AFF), 1f);
+        }
+
+        if (config.ExperimentalFlowingWaterEmitters)
+        {
+            AddField(new WaterField(clientApi, WaterFieldProfile.Flowing), "flowingwater",
+                () => Config.EnableDebugTools && Config.ShowFlowingWaterDebugVisuals, unchecked((int)0xFF66E0FF), 0.5f);
         }
 
         if (config.EnableRainEmitters)

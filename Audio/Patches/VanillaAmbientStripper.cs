@@ -31,7 +31,10 @@ internal static class VanillaAmbientStripper
     private static readonly (string Path, System.Func<SurroundWeatherConfig, bool> Replaced)[] TakenOver =
     {
         (RainWindowField.WindowSound, config => config.ExperimentalWindowRainEmitters),
-        (WaterWaveField.WaveSound, config => config.ExperimentalWaterWaveEmitters),
+        (WaterField.WaveSound, config => config.ExperimentalWaterWaveEmitters),
+        (WaterField.CreekSound, config => config.ExperimentalFlowingWaterEmitters),
+        (WaterField.RapidsSound, config => config.ExperimentalFlowingWaterEmitters),
+        (WaterField.FallSound, config => config.ExperimentalFlowingWaterEmitters),
     };
 
     private static ILogger log;
