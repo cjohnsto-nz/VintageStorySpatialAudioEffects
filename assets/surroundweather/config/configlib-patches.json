@@ -202,6 +202,14 @@
       }
     },
     {
+      "code": "PlaceAmbientSoundsOnTheirBlocks",
+      "type": "boolean",
+      "default": true,
+      "clientSide": true,
+      "ingui": "Ambient sounds on their blocks",
+      "comment": "Play a block's ambient sound (rain on windows) from the nearest block that makes it, instead of vanilla's bounding box, which puts it on your head indoors."
+    },
+    {
       "type": "separator",
       "title": "Debug"
     },

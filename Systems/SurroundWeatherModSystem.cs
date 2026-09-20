@@ -44,6 +44,7 @@ public sealed class SurroundWeatherModSystem : ModSystem
         harmony = new Harmony(Mod.Info.ModID);
         harmony.PatchAll(typeof(SurroundWeatherModSystem).Assembly);
         CustomSoundRegistry.Register(api, Mod.Logger);
+        AmbientSoundPlacementPatch.Initialize(api);
         ApplyRuntimeConfig();
     }
 

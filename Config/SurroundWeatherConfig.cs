@@ -54,6 +54,12 @@ public sealed class SurroundWeatherConfig
     /// <summary>Scales the wind emitters' loudness.</summary>
     public float WindEmitterVolume { get; set; } = 1f;
 
+    /// <summary>
+    /// Play a block's ambient sound (rain on windows) from the nearest block that makes it, rather
+    /// than from vanilla's bounding box, which puts it on your head indoors.
+    /// </summary>
+    public bool PlaceAmbientSoundsOnTheirBlocks { get; set; } = true;
+
     public bool EnableDebugTools { get; set; } = false;
     public bool ShowLeafRustleDebugVisuals { get; set; } = false;
     public bool ShowRainEmitterDebugVisuals { get; set; } = false;
