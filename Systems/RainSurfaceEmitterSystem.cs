@@ -29,10 +29,22 @@ internal sealed class RainSurfaceEmitterSystem : IDisposable
     /// <summary>A surface further above or below than this is another world (a cave roof, a cliff).</summary>
     private const double MaxVerticalOffset = 20.0;
     private const float Range = 16f;
-    private const float BaseVolume = 0.55f;
+    private const float BaseVolume = 0.85f;
     private const int MaxSetChangesPerTick = 2;
     private const float MediumRainFrom = 0.35f;
     private const float HeavyRainFrom = 0.7f;
+    /// <summary>A downpour is louder than a shower beyond what its recording says.</summary>
+    private const float LightGain = 0.8f;
+    private const float MediumGain = 1.0f;
+    private const float HeavyGain = 1.3f;
+    /// <summary>An emitter lives about this long, give or take a third, then its place moves on.</summary>
+    private const double LifetimeJitter = 0.35;
+    /// <summary>Moving, a spot this far behind the view is left behind rather than followed.</summary>
+    private const double BehindDistance = 7.0;
+    private const double BehindCos = -0.3;
+    private const float BehindFadeSeconds = 0.4f;
+    /// <summary>Walking, not turning: below this the listener counts as standing still.</summary>
+    private const double MovingSpeed = 0.02;
 
     /// <summary>Columns are looked at every this many blocks: a fixed grid, so placement repeats.</summary>
     private const int CandidateStep = 2;
@@ -55,6 +67,8 @@ internal sealed class RainSurfaceEmitterSystem : IDisposable
     private long lastCandidateRefreshMs;
     private readonly Vec3d lastCandidateCenter = new();
     private bool hasCandidateCenter;
+    private readonly Vec3d lastPlayerPos = new();
+    private bool hasLastPlayerPos;
 
     public RainSurfaceEmitterSystem(ICoreClientAPI capi)
     {
@@ -138,18 +152,19 @@ internal sealed class RainSurfaceEmitterSystem : IDisposable
         }
 
         Vec3d ears = Ears(player);
+        Facing facing = FacingOf(player);
         float intensity = GameMath.Clamp(rainfall * 2f, 0f, 1f);
-        float volume = GameMath.Clamp(BaseVolume * intensity * Math.Max(0f, config.RainSurfaceEmitterVolume), 0.01f, 1f);
-        int wanted = (int)Math.Round(Math.Max(2, config.RainSurfaceEmitterCount) * (0.45f + (0.55f * intensity)));
         RainSampleSet wantedSet = SetForIntensity(intensity);
+        float volume = VolumeFor(intensity, wantedSet, config);
+        int wanted = (int)Math.Round(Math.Max(2, config.RainSurfaceEmitterCount) * (0.35f + (0.65f * intensity)));
 
-        UpdateLiveEmitters(player.Pos, ears, config, volume, wantedSet, wanted, nowMs);
-        RefreshCandidates(player.Pos, ears, config, nowMs);
-        Fill(player.Pos, volume, wantedSet, config, wanted);
+        UpdateLiveEmitters(player.Pos, ears, facing, config, volume, wantedSet, wanted, nowMs);
+        RefreshCandidates(player.Pos, ears, facing, config, nowMs);
+        Fill(player.Pos, volume, wantedSet, config, wanted, nowMs);
     }
 
-    /// <summary>Range, occlusion, the set the weather asks for, and the volume it asks for.</summary>
-    private void UpdateLiveEmitters(EntityPos playerPos, Vec3d ears, SurroundWeatherConfig config, float volume, RainSampleSet wantedSet, int wanted, long nowMs)
+    /// <summary>Range, what has fallen behind, occlusion, age, the set and the volume.</summary>
+    private void UpdateLiveEmitters(EntityPos playerPos, Vec3d ears, Facing facing, SurroundWeatherConfig config, float volume, RainSampleSet wantedSet, int wanted, long nowMs)
     {
         double keep = Math.Max(MinRadius + 1.0, config.RainSurfaceEmitterRadius) * 1.6;
         double keepSq = keep * keep;
@@ -168,6 +183,26 @@ internal sealed class RainSurfaceEmitterSystem : IDisposable
                 double dx = emitter.X - playerPos.X;
                 double dz = emitter.Z - playerPos.Z;
                 if ((dx * dx) + (dz * dz) > keepSq || Math.Abs(emitter.Y - playerPos.Y) > MaxVerticalOffset)
+                {
+                    BeginFade(emitter, nowMs, FadeSeconds);
+                    emitters.RemoveAt(i);
+                    continue;
+                }
+
+                // Walking on: rain behind you is rain you have left, and holding it there is what
+                // makes an emitter sound like a speaker you walked past.
+                double horizontal = Math.Sqrt((dx * dx) + (dz * dz));
+                if (facing.IsMoving && horizontal > BehindDistance
+                    && ((dx * facing.X) + (dz * facing.Z)) / Math.Max(horizontal, 1e-6) < BehindCos)
+                {
+                    BeginFade(emitter, nowMs, BehindFadeSeconds);
+                    emitters.RemoveAt(i);
+                    continue;
+                }
+
+                // Every emitter has a short life: its place moves on even when you do not, so the
+                // rain keeps shifting instead of standing in fixed spots.
+                if (emitter.ExpiresMs <= nowMs)
                 {
                     BeginFade(emitter, nowMs, FadeSeconds);
                     emitters.RemoveAt(i);
@@ -212,7 +247,7 @@ internal sealed class RainSurfaceEmitterSystem : IDisposable
     /// Every column on the grid around the listener, by the rain height map, scored by how clear
     /// the way to it is and how near it is. Kept for half a second, or until the listener moves on.
     /// </summary>
-    private void RefreshCandidates(EntityPos playerPos, Vec3d ears, SurroundWeatherConfig config, long nowMs)
+    private void RefreshCandidates(EntityPos playerPos, Vec3d ears, Facing facing, SurroundWeatherConfig config, long nowMs)
     {
         if (hasCandidateCenter && nowMs - lastCandidateRefreshMs < CandidateRefreshMs
             && lastCandidateCenter.SquareDistanceTo(playerPos.X, playerPos.Y, playerPos.Z) < CandidateMoveRefresh * CandidateMoveRefresh)
@@ -258,10 +293,13 @@ internal sealed class RainSurfaceEmitterSystem : IDisposable
                     continue;
                 }
 
-                // Near, and near your level, before anything is traced.
+                // Near, near your level, and ahead of where you look: rain fills in front of you
+                // as you walk into it, rather than behind where you have been.
                 double nearness = 1.0 - (horizontal / maxRadius);
                 double level = 1.0 - (verticalOffset / MaxVerticalOffset);
-                rough.Add(new Candidate(ex, ey, ez, x, surfaceY, z, Octant(relX, relZ), (nearness * 0.6) + (level * 0.4)));
+                double ahead = (((relX * facing.X) + (relZ * facing.Z)) / horizontal + 1.0) * 0.5;
+                rough.Add(new Candidate(ex, ey, ez, x, surfaceY, z, Octant(relX, relZ),
+                    (nearness * 0.42) + (level * 0.28) + (ahead * 0.30)));
             }
         }
 
@@ -292,7 +330,7 @@ internal sealed class RainSurfaceEmitterSystem : IDisposable
     /// octant with the fewest emitters goes first, so the open sounds like every side at once and a
     /// cave like its mouth.
     /// </summary>
-    private void Fill(EntityPos playerPos, float volume, RainSampleSet wantedSet, SurroundWeatherConfig config, int wanted)
+    private void Fill(EntityPos playerPos, float volume, RainSampleSet wantedSet, SurroundWeatherConfig config, int wanted, long nowMs)
     {
         if (candidates.Count == 0)
         {
@@ -338,7 +376,7 @@ internal sealed class RainSurfaceEmitterSystem : IDisposable
             Block surface = capi.World.BlockAccessor.GetBlock(new BlockPos(chosen.BlockX, chosen.SurfaceY, chosen.BlockZ, playerPos.Dimension));
             // What the rain lands on picks the sound as much as how hard it falls.
             RainSampleSet set = surface?.BlockMaterial == EnumBlockMaterial.Leaves ? RainSampleSet.Canopy : wantedSet;
-            if (!Play(chosen.X, chosen.Y, chosen.Z, surface, set, volume))
+            if (!Play(chosen.X, chosen.Y, chosen.Z, surface, set, volume, nowMs, config))
             {
                 return;
             }
@@ -359,7 +397,7 @@ internal sealed class RainSurfaceEmitterSystem : IDisposable
         return counts;
     }
 
-    private bool Play(double x, double y, double z, Block surface, RainSampleSet set, float volume)
+    private bool Play(double x, double y, double z, Block surface, RainSampleSet set, float volume, long nowMs, SurroundWeatherConfig config)
     {
         // Rain on water is brighter; otherwise a little random spread keeps the emitters from
         // ringing as one voice. The canopy set is already rain in leaves, so it is left alone.
@@ -391,12 +429,55 @@ internal sealed class RainSurfaceEmitterSystem : IDisposable
         // Each emitter enters the loop somewhere else, so they do not pulse together.
         sound.PlaybackPosition = (float)random.NextDouble() * Math.Max(0.1f, sound.SoundLengthSeconds);
         sound.FadeTo(volume, FadeSeconds, _ => { });
+        double lifetime = Math.Max(1.0, config.RainSurfaceEmitterLifetimeSeconds);
+        lifetime *= 1.0 + ((random.NextDouble() - 0.5) * 2.0 * LifetimeJitter);
         lock (snapshotLock)
         {
-            emitters.Add(new Emitter(sound, x, y, z) { Volume = volume, Set = set });
+            emitters.Add(new Emitter(sound, x, y, z)
+            {
+                Volume = volume,
+                Set = set,
+                ExpiresMs = nowMs + (long)(lifetime * 1000.0),
+            });
         }
 
         return true;
+    }
+
+    /// <summary>How loud the rain is: the weather, the character of the set, and the setting.</summary>
+    private static float VolumeFor(float intensity, RainSampleSet set, SurroundWeatherConfig config)
+    {
+        float gain = set switch
+        {
+            RainSampleSet.Light => LightGain,
+            RainSampleSet.Heavy => HeavyGain,
+            _ => MediumGain,
+        };
+        // Rising faster than the rainfall does, so a downpour lands as one.
+        float weather = MathF.Pow(intensity, 0.75f);
+        return GameMath.Clamp(BaseVolume * weather * gain * Math.Max(0f, config.RainSurfaceEmitterVolume), 0.01f, 1f);
+    }
+
+    /// <summary>Where the listener looks, and whether they are walking.</summary>
+    private Facing FacingOf(Entity player)
+    {
+        Vec3d position = player.Pos.XYZ;
+        bool moving = false;
+        if (hasLastPlayerPos)
+        {
+            double dx = position.X - lastPlayerPos.X;
+            double dz = position.Z - lastPlayerPos.Z;
+            moving = Math.Sqrt((dx * dx) + (dz * dz)) > MovingSpeed;
+        }
+
+        lastPlayerPos.Set(position);
+        hasLastPlayerPos = true;
+
+        Vec3f view = player.Pos.GetViewVector();
+        double length = Math.Sqrt((view.X * view.X) + (view.Z * view.Z));
+        return length > 1e-3
+            ? new Facing(view.X / length, view.Z / length, moving)
+            : new Facing(-Math.Sin(player.Pos.Yaw), Math.Cos(player.Pos.Yaw), moving);
     }
 
     /// <summary>A light shower, a steady rain or a downpour: the weather picks the set.</summary>
@@ -562,7 +643,10 @@ internal sealed class RainSurfaceEmitterSystem : IDisposable
         }
     }
 
-    /// <param name="Score">How well worth playing this spot is: clear of rock, near, near your level.</param>
+    /// <summary>Where the listener looks (horizontally), and whether they are walking.</summary>
+    private readonly record struct Facing(double X, double Z, bool IsMoving);
+
+    /// <param name="Score">How well worth playing this spot is: clear of rock, near, near your level, ahead.</param>
     private readonly record struct Candidate(double X, double Y, double Z, int BlockX, int SurfaceY, int BlockZ, int Octant, double Score);
 
     private sealed class Emitter(ILoadedSound sound, double x, double y, double z)
@@ -578,6 +662,8 @@ internal sealed class RainSurfaceEmitterSystem : IDisposable
         public float Volume { get; set; }
 
         public RainSampleSet Set { get; set; }
+
+        public long ExpiresMs { get; set; }
 
         public long DisposeAtMs { get; set; }
     }

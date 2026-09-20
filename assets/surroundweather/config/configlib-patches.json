@@ -106,7 +106,7 @@
     {
       "code": "RainSurfaceEmitterCount",
       "type": "integer",
-      "default": 16,
+      "default": 24,
       "clientSide": true,
       "ingui": "Rain emitters",
       "comment": "Rain emitters around you at full rain.",
@@ -119,13 +119,26 @@
     {
       "code": "RainSurfaceEmitterSpacing",
       "type": "float",
-      "default": 3.0,
+      "default": 2.5,
       "clientSide": true,
       "ingui": "Rain emitter spacing",
       "comment": "Blocks between rain emitters (lower packs more into a small opening).",
       "range": {
         "min": 1.0,
         "max": 12.0,
+        "step": 0.5
+      }
+    },
+    {
+      "code": "RainSurfaceEmitterLifetimeSeconds",
+      "type": "float",
+      "default": 5.0,
+      "clientSide": true,
+      "ingui": "Rain emitter lifetime",
+      "comment": "Seconds an emitter plays before its place moves on (lower keeps the rain shifting).",
+      "range": {
+        "min": 1.0,
+        "max": 20.0,
         "step": 0.5
       }
     },
