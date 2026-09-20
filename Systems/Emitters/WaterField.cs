@@ -87,6 +87,12 @@ internal sealed class WaterField : EmitterField
     /// <summary>Waves are slow; a slice wants to be long enough to be one.</summary>
     protected override double LifetimeSeconds => Still ? 6.0 : 5.0;
 
+    /// <summary>
+    /// Vanilla played one sound for the whole body of water. These are several, and several of
+    /// them at once is louder than one of them for nothing: past four, each gives way.
+    /// </summary>
+    protected override int LoudnessReference => 4;
+
     protected override int MaxCount(float intensity) =>
         Math.Max(1, Still ? Config.WaterWaveCount : Config.FlowingWaterCount);
 

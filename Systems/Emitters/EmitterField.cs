@@ -67,6 +67,7 @@ internal abstract class EmitterField : IDisposable
     private bool hasCells;
     private long lastCellRefreshMs;
     private long lastStateLogMs;
+    private float crowdShare = 1f;
     private double velocityX;
     private double velocityZ;
     private double logicAccumulator;
@@ -129,6 +130,15 @@ internal abstract class EmitterField : IDisposable
     /// emitter, such as a window pane.
     /// </summary>
     protected virtual bool RingsWiden => true;
+
+    /// <summary>
+    /// How many emitters this field's volumes are written for, or 0 to leave them alone. Sounds
+    /// that are not copies of one another add as powers, so nine of them are three times as loud
+    /// as one, not nine: above this many, each one is quieter by the square root of how many more
+    /// there are, and the field as a whole stays where it was put. Below it they are left at full,
+    /// so a pond is still quieter than a lake.
+    /// </summary>
+    protected virtual int LoudnessReference => 0;
 
     /// <summary>Write what this field is doing to the log every few seconds, to track a fault down.</summary>
     protected virtual bool LogState => false;
@@ -281,6 +291,7 @@ internal abstract class EmitterField : IDisposable
         Vec3d ears = new(playerPos.X + player.LocalEyePos.X, playerPos.Y + player.LocalEyePos.Y, playerPos.Z + player.LocalEyePos.Z);
 
         RefreshCells(centre, radius, playerPos, ears, intensity, nowMs);
+        UpdateCrowdShare();
 
         // Cells that left the rings (or went behind rock) empty at once; the rest follow the weather.
         foreach (Emitter emitter in emitters)
@@ -296,7 +307,7 @@ internal abstract class EmitterField : IDisposable
                 continue;
             }
 
-            emitter.TargetVolume = GameMath.Clamp(VolumeOf(emitter.Variant, emitter.Cell, intensity) * emitter.Cell.Gain, 0f, 1f);
+            emitter.TargetVolume = VolumeFor(emitter.Variant, emitter.Cell, intensity);
         }
 
         // Empty cells fill nearest first; then cells whose slice has run its life take the next
@@ -482,6 +493,23 @@ internal abstract class EmitterField : IDisposable
         return blocked;
     }
 
+    /// <summary>What one emitter plays at: its own volume, its cell's share, and the field's.</summary>
+    private float VolumeFor(int variant, in EmitterCell cell, float intensity) =>
+        GameMath.Clamp(VolumeOf(variant, cell, intensity) * cell.Gain * crowdShare, 0f, 1f);
+
+    /// <summary>
+    /// How much of its own volume each emitter gets, for how many are playing: one over the root
+    /// of the crowd, once there is one. Taken from the cells the field wants rather than the
+    /// emitters it has, so filling a cell does not turn the others down as it arrives.
+    /// </summary>
+    private void UpdateCrowdShare()
+    {
+        int reference = LoudnessReference;
+        crowdShare = reference <= 0 || cells.Count <= reference
+            ? 1f
+            : MathF.Sqrt((float)reference / cells.Count);
+    }
+
     private static double DistanceSq(in EmitterCell cell, Vec3d ears)
     {
         double dx = cell.X - ears.X;
@@ -517,7 +545,7 @@ internal abstract class EmitterField : IDisposable
         var emitter = new Emitter(sound, cell)
         {
             Variant = variant,
-            TargetVolume = GameMath.Clamp(VolumeOf(variant, cell, intensity) * cell.Gain, 0f, 1f),
+            TargetVolume = VolumeFor(variant, cell, intensity),
             BornMs = nowMs,
             ExpiresMs = nowMs + (long)(lifetime * 1000.0),
         };
