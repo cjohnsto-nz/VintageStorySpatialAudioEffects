@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using HarmonyLib;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
@@ -22,12 +24,7 @@ public sealed class SurroundWeatherModSystem : ModSystem
     private ICoreAPI api;
     private ICoreClientAPI clientApi;
     private Harmony harmony;
-    private LeafRustleEmitterSystem leafRustleEmitterSystem;
-    private LeafRustleDebugRenderer leafRustleDebugRenderer;
-    private RainEmitterSystem rainEmitterSystem;
-    private RainEmitterDebugRenderer rainEmitterDebugRenderer;
-    private RainSurfaceEmitterSystem rainSurfaceEmitterSystem;
-    private RainSurfaceEmitterDebugRenderer rainSurfaceEmitterDebugRenderer;
+    private readonly List<(EmitterField Field, EmitterFieldDebugRenderer Renderer)> fields = new();
 
     public override bool ShouldLoad(EnumAppSide forSide) => forSide == EnumAppSide.Client;
 
@@ -52,8 +49,7 @@ public sealed class SurroundWeatherModSystem : ModSystem
 
     public override void Dispose()
     {
-        DisposeLeafRustleRuntime();
-        DisposeRainRuntime();
+        DisposeFields();
         WeatherBedOverrides.Restore(Mod.Logger);
         harmony?.UnpatchAll(harmony.Id);
         clientApi = null;
@@ -79,70 +75,44 @@ public sealed class SurroundWeatherModSystem : ModSystem
         SurroundWeatherConfig config = SurroundWeatherConfigManager.Current;
         WeatherBedOverrides.Apply(clientApi, Mod.Logger, config.ReplaceVanillaWeatherBeds, config.ExperimentalRainSurfaceEmitters);
 
-        DisposeLeafRustleRuntime();
-        DisposeRainRuntime();
-
+        // Every emitter is an EmitterField: they lead the listener, turn over steadily and fade alike.
+        DisposeFields();
         if (config.EnableLeafRustleEmitters)
         {
-            leafRustleEmitterSystem = new LeafRustleEmitterSystem(clientApi);
-            leafRustleDebugRenderer = new LeafRustleDebugRenderer(clientApi, leafRustleEmitterSystem);
-            clientApi.Event.RegisterRenderer(leafRustleDebugRenderer, EnumRenderStage.Opaque, "surroundweather-leafdebug");
+            AddField(new LeafRustleField(clientApi), "leaf", () => Config.ShowLeafRustleDebugVisuals, unchecked((int)0xFF4DFF4D), 0.24f);
         }
 
         if (config.ExperimentalRainSurfaceEmitters)
         {
-            rainSurfaceEmitterSystem = new RainSurfaceEmitterSystem(clientApi);
-            if (config.EnableDebugTools && config.ShowRainSurfaceEmitterDebugVisuals)
-            {
-                rainSurfaceEmitterDebugRenderer = new RainSurfaceEmitterDebugRenderer(clientApi, rainSurfaceEmitterSystem);
-                clientApi.Event.RegisterRenderer(rainSurfaceEmitterDebugRenderer, EnumRenderStage.Opaque, "surroundweather-rainsurfacedebug");
-            }
+            AddField(new RainEmitterField(clientApi, RainFieldProfile.SurfaceLoops), "rainsurface",
+                () => Config.EnableDebugTools && Config.ShowRainSurfaceEmitterDebugVisuals, unchecked((int)0xFF4DFFD2), 1f);
         }
 
         if (config.EnableRainEmitters)
         {
-            rainEmitterSystem = new RainEmitterSystem(clientApi);
-            if (config.EnableDebugTools && config.ShowRainEmitterDebugVisuals)
-            {
-                rainEmitterDebugRenderer = new RainEmitterDebugRenderer(clientApi, rainEmitterSystem);
-                clientApi.Event.RegisterRenderer(rainEmitterDebugRenderer, EnumRenderStage.Opaque, "surroundweather-raindebug");
-            }
+            AddField(new RainEmitterField(clientApi, RainFieldProfile.Splashes), "rain",
+                () => Config.EnableDebugTools && Config.ShowRainEmitterDebugVisuals, unchecked((int)0xFF4DA6FF), 0.32f);
         }
     }
 
-    private void DisposeLeafRustleRuntime()
-    {
-        if (leafRustleDebugRenderer != null)
-        {
-            clientApi?.Event.UnregisterRenderer(leafRustleDebugRenderer, EnumRenderStage.Opaque);
-            leafRustleDebugRenderer.Dispose();
-            leafRustleDebugRenderer = null;
-        }
+    private static SurroundWeatherConfig Config => SurroundWeatherConfigManager.Current;
 
-        leafRustleEmitterSystem?.Dispose();
-        leafRustleEmitterSystem = null;
+    private void AddField(EmitterField field, string name, Func<bool> debugEnabled, int color, float loudest)
+    {
+        var renderer = new EmitterFieldDebugRenderer(clientApi, field, debugEnabled, color, loudest);
+        clientApi.Event.RegisterRenderer(renderer, EnumRenderStage.Opaque, "surroundweather-" + name + "debug");
+        fields.Add((field, renderer));
     }
 
-    private void DisposeRainRuntime()
+    private void DisposeFields()
     {
-        if (rainSurfaceEmitterDebugRenderer != null)
+        foreach ((EmitterField field, EmitterFieldDebugRenderer renderer) in fields)
         {
-            clientApi?.Event.UnregisterRenderer(rainSurfaceEmitterDebugRenderer, EnumRenderStage.Opaque);
-            rainSurfaceEmitterDebugRenderer.Dispose();
-            rainSurfaceEmitterDebugRenderer = null;
+            clientApi?.Event.UnregisterRenderer(renderer, EnumRenderStage.Opaque);
+            renderer.Dispose();
+            field.Dispose();
         }
 
-        rainSurfaceEmitterSystem?.Dispose();
-        rainSurfaceEmitterSystem = null;
-
-        if (rainEmitterDebugRenderer != null)
-        {
-            clientApi?.Event.UnregisterRenderer(rainEmitterDebugRenderer, EnumRenderStage.Opaque);
-            rainEmitterDebugRenderer.Dispose();
-            rainEmitterDebugRenderer = null;
-        }
-
-        rainEmitterSystem?.Dispose();
-        rainEmitterSystem = null;
+        fields.Clear();
     }
 }
