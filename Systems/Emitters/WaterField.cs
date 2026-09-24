@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
@@ -49,6 +50,9 @@ internal sealed class WaterField : EmitterField
     /// <summary>Out from the middle of a falling block, into the air beside it.</summary>
     private const double FallSideOffset = 0.6;
 
+    /// <summary>How long a cell's search for running water holds before it looks again.</summary>
+    private const long ColumnCacheMs = 2000;
+
     // Kinds: what the water is doing here. They are also what picks the sound.
     private const int OpenWater = 0;
     private const int Shore = 1;
@@ -60,6 +64,12 @@ internal sealed class WaterField : EmitterField
 
     /// <summary>What the blocks hereabouts play, kind by kind, taken from the first one seen.</summary>
     private readonly AssetLocation[] soundsByKind = new AssetLocation[5];
+
+    /// <summary>What each cell of running water found, and when it looked.</summary>
+    private readonly Dictionary<long, FoundWater> columnCache = new();
+
+    /// <summary>The order the columns of a cell are looked at in, by cell size.</summary>
+    private static readonly Dictionary<int, (int Dx, int Dz)[]> ColumnOrders = new();
 
     public WaterField(ICoreClientAPI capi, WaterFieldProfile profile)
         : base(capi)
@@ -121,15 +131,57 @@ internal sealed class WaterField : EmitterField
     protected override bool TryGetCell(IBlockAccessor blocks, int x, int z, int size, EntityPos playerPos,
                                        out double px, out double py, out double pz, out int kind)
     {
+        // The water nearest the listener's own level, so a lake below a cliff is below them and a
+        // creek on a ledge above is above, rather than whatever the sky happens to see.
+        int baseY = (int)Math.Floor(playerPos.Y);
+        if (Still)
+        {
+            // A lake is broad: the middle of the cell lands on it or it is not much of a lake.
+            return TryGetColumn(blocks, x, z, baseY, playerPos.Dimension, out px, out py, out pz, out kind);
+        }
+
+        // A creek is a line a block wide and a fall a single column: the middle of a cell steps
+        // over most of them, so every column of it is looked at, the middle first and outward.
+        // That is many more blocks, and water stays put, so a cell's answer is kept a while.
+        long key = ((long)(x & 0xFFFFFF) << 40) | ((long)(z & 0xFFFFFF) << 16) | (long)(baseY & 0xFFFF);
+        long nowMs = Environment.TickCount64;
+        if (columnCache.TryGetValue(key, out FoundWater known) && nowMs - known.AtMs < ColumnCacheMs)
+        {
+            (px, py, pz, kind) = (known.X, known.Y, known.Z, known.Kind);
+            return known.Found;
+        }
+
+        if (columnCache.Count > 4096)
+        {
+            columnCache.Clear();
+        }
+
+        bool found = false;
+        px = py = pz = 0;
+        kind = OpenWater;
+        foreach ((int dx, int dz) in ColumnsOf(size))
+        {
+            if (TryGetColumn(blocks, x + dx, z + dz, baseY, playerPos.Dimension, out px, out py, out pz, out kind))
+            {
+                found = true;
+                break;
+            }
+        }
+
+        columnCache[key] = new FoundWater(found, px, py, pz, kind, nowMs);
+        return found;
+    }
+
+    /// <summary>Where the water in one column plays, if it is this field's water.</summary>
+    private bool TryGetColumn(IBlockAccessor blocks, int x, int z, int baseY, int dimension,
+                              out double px, out double py, out double pz, out int kind)
+    {
         px = x + 0.5;
         py = 0;
         pz = z + 0.5;
         kind = OpenWater;
 
-        // The water nearest the listener's own level, so a lake below a cliff is below them and a
-        // creek on a ledge above is above, rather than whatever the sky happens to see.
-        int baseY = (int)Math.Floor(playerPos.Y);
-        var pos = new BlockPos(0, 0, 0, playerPos.Dimension);
+        var pos = new BlockPos(0, 0, 0, dimension);
         for (int step = 0; step <= VerticalReach * 2; step++)
         {
             // The listener's own level first, then a block below, a block above, and outward.
@@ -151,7 +203,7 @@ internal sealed class WaterField : EmitterField
 
             if (Still)
             {
-                if (!Contains(sound, WaveSound) || !TryGetStillSurface(blocks, x, y, z, playerPos.Dimension, out kind))
+                if (!Contains(sound, WaveSound) || !TryGetStillSurface(blocks, x, y, z, dimension, out kind))
                 {
                     continue;
                 }
@@ -160,7 +212,7 @@ internal sealed class WaterField : EmitterField
             }
             else if (Contains(sound, FallSound))
             {
-                if (!TryGetOpenSide(blocks, x, y, z, playerPos.Dimension, out BlockFacing side))
+                if (!TryGetOpenSide(blocks, x, y, z, dimension, out BlockFacing side))
                 {
                     continue;  // buried in its own fall: the sound is where the air is
                 }
@@ -192,6 +244,37 @@ internal sealed class WaterField : EmitterField
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// The columns of a cell as offsets from its middle one, nearest the middle first. The same
+    /// order every time, so a cell finds the same water every time.
+    /// </summary>
+    private static (int Dx, int Dz)[] ColumnsOf(int size)
+    {
+        if (ColumnOrders.TryGetValue(size, out (int, int)[] order))
+        {
+            return order;
+        }
+
+        int low = -(size / 2);
+        var columns = new List<(int Dx, int Dz)>(size * size);
+        for (int dx = low; dx < low + size; dx++)
+        {
+            for (int dz = low; dz < low + size; dz++)
+            {
+                columns.Add((dx, dz));
+            }
+        }
+
+        columns.Sort((a, b) =>
+        {
+            int byDistance = ((a.Dx * a.Dx) + (a.Dz * a.Dz)).CompareTo((b.Dx * b.Dx) + (b.Dz * b.Dz));
+            return byDistance != 0 ? byDistance : a.Dx != b.Dx ? a.Dx.CompareTo(b.Dx) : a.Dz.CompareTo(b.Dz);
+        });
+        order = columns.ToArray();
+        ColumnOrders[size] = order;
+        return order;
     }
 
     protected override ILoadedSound CreateSound(in EmitterCell cell, float intensity, out int variant)
@@ -271,4 +354,6 @@ internal sealed class WaterField : EmitterField
 
         return false;
     }
+
+    private readonly record struct FoundWater(bool Found, double X, double Y, double Z, int Kind, long AtMs);
 }
